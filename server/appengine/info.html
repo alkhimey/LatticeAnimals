@@ -1,0 +1,55 @@
+<html>
+  <head>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(drawChart1);
+      function drawChart1() {
+        var data = google.visualization.arrayToDataTable([
+          ['Part', 'Number of Ids'],
+          ['Not allocated',               {{ not_allocated }} ],
+          ['Allocated not Reported',      {{ not_reported }}  ],
+          ['Allocated and Reported',      {{ reported }}      ]
+        ]);
+
+        var options = {
+          title: 'Total Progress'
+        };
+
+        var chart = new google.visualization.PieChart(document.getElementById('chart_pie'));
+        chart.draw(data, options);
+      }
+    </script>
+  </head>
+
+  <body> 
+    <table  border="1" style="border-collapse: collapse;" cellpadding="4px">
+        <tr> <th colspan="2"> Configuration </th> </tr>
+   
+		{% for k,v in config_dict.items %}
+		<tr> <td> {{ k }} </td> <td> {{ v }} </td> </tr>		{% endfor %}
+
+    </table>
+    <br>
+    <table  border="1" style="border-collapse: collapse;" cellpadding="4px">
+        <tr> <th colspan="2"> Progress </th> </tr>
+   
+		<tr> <td> created ids 		</td> <td> {{ total 	}} </td> </tr>
+        <tr> <td> allocated ids 	</td> <td> {{ allocated }} </td> </tr>
+        <tr> <td> reported ids 		</td> <td> {{ reported 	}} </td> </tr>
+        <tr> <td> started at 		</td> <td> {{ date_started }} </td> </tr>
+        <tr> <td> latest report at  </td> <td> {{ date_last }} </td> </tr>
+		<tr> <td> total cpu time  </td> <td> {{ cpu_time }} seconds </td> </tr>
+    </table>
+    
+    <h3> Current results: </h3>
+    <table>
+
+	  {% for k,v in sums %}
+	  <tr> <td style="padding-right: 50px"> {{ k }} </td> <td> {{ v }} </td> </tr>
+	  {% endfor %}
+
+    </table>
+    <div id="chart_pie" style="width: 900px; height: 500px;"></div>
+  </body>
+</html>

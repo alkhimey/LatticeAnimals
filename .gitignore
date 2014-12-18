@@ -1,0 +1,4 @@
+bin/
+obj/
+*.pyc
+experimental/fixed10a
