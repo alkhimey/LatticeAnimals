@@ -1,0 +1,15 @@
+#! /usr/bin/tcsh
+if (${#argv} != 5) then
+	echo "usage: Count [d] [n] [breakPoint] [numberOfChunks] [startingFrom]"
+else
+	@ i = $5
+	while ($i <= $4)
+		set name = "results/ProperPolyominoCount-${1}d-${2}n-breakAt${3}-${i}of${4}.txt"
+		if (-f $name) then
+		else
+			./PolyominoCounter $1 $2 $3 $4 $i
+		endif
+		@ i++
+	end
+	./PolyominoMerger $1 $2 $3 $4
+endif

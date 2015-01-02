@@ -1,0 +1,39 @@
+# Project: PoylominoCounter
+# Makefile created by Dev-C++ 4.9.9.2
+
+CPP  = g++.exe
+CC   = gcc.exe
+WINDRES = windres.exe
+RES  = 
+OBJ  = redelmeierpolyominos.o bigint.o redelmeieralgorithm.o redelmeiergraph.o $(RES)
+LINKOBJ  = redelmeierpolyominos.o bigint.o redelmeieralgorithm.o redelmeiergraph.o $(RES)
+LIBS =  -L"G:/Dev-Cpp/lib"  
+INCS =  -I"G:/Dev-Cpp/include" 
+CXXINCS =  -I"G:/Dev-Cpp/lib/gcc/mingw32/3.4.2/include"  -I"G:/Dev-Cpp/include/c++/3.4.2/backward"  -I"G:/Dev-Cpp/include/c++/3.4.2/mingw32"  -I"G:/Dev-Cpp/include/c++/3.4.2"  -I"G:/Dev-Cpp/include" 
+BIN  = PolyominoCounter.exe
+CXXFLAGS = $(CXXINCS)  
+CFLAGS = $(INCS)  
+RM = rm -f
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before PolyominoCounter.exe all-after
+
+
+clean: clean-custom
+	${RM} $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CPP) $(LINKOBJ) -o "PolyominoCounter.exe" $(LIBS)
+
+redelmeierpolyominos.o: redelmeierpolyominos.cpp
+	$(CPP) -c redelmeierpolyominos.cpp -o redelmeierpolyominos.o $(CXXFLAGS)
+
+bigint.o: bigint.cpp
+	$(CPP) -c bigint.cpp -o bigint.o $(CXXFLAGS)
+
+redelmeieralgorithm.o: redelmeieralgorithm.cpp
+	$(CPP) -c redelmeieralgorithm.cpp -o redelmeieralgorithm.o $(CXXFLAGS)
+
+redelmeiergraph.o: redelmeiergraph.cpp
+	$(CPP) -c redelmeiergraph.cpp -o redelmeiergraph.o $(CXXFLAGS)

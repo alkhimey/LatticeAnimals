@@ -1,0 +1,11 @@
+1: 0
+2: 0
+3: 4
+4: 16
+5: 53
+6: 3
+7: 10
+8: 35
+9: 123
+10: 432
+Time taken: 0 seconds, 0 minutes, 0 hours, 0 days.

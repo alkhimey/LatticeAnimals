@@ -1,0 +1,79 @@
+require "socket"
+require "monitor"
+$MAX_MESSAGE_SIZE = 1000
+$PORT=20000
+lock=Monitor.new
+
+def parameters_to_filename(d,n,breakpoint, total_chunks,current_chunk)
+	"results/ProperPolyominoCount-#{d}d-#{n}n-breakAt#{breakpoint}-#{current_chunk}of#{total_chunks}.txt"
+end
+def setup_data_array(d,n,breakpoint,total_chunks)
+	size=total_chunks.to_i
+	temp=[0]*size
+	temp[0]=:not_needed
+	size.times{|current_chunk| temp[current_chunk]=:done if File.file?(parameters_to_filename(d,n,breakpoint,total_chunks,current_chunk))}
+	return temp
+end
+def get_chunk(array)
+	min=array.find_all{|x| Integer===x}.min
+	unless min==nil
+		temp=array.index(min)
+		array[temp]+=1
+		return temp
+	end
+	return nil
+end
+def mark_assignment_finished(array, assignment)
+	array[assignment]=:done
+end
+
+def log(string)
+	File.open("log.txt","a"){|file| file.write("#{Time.new}:#{string.chomp}\n")}
+end
+
+if ARGV.size != 4
+	puts "usage: server [d] [n] [breakPoint] [totalChunks]"
+	exit
+end
+
+d=ARGV[0]
+n=ARGV[1]
+breakpoint=ARGV[2]
+total_chunks=ARGV[3]
+
+server=TCPServer.new("", $PORT)
+
+data_array=setup_data_array(d,n,breakpoint,total_chunks)
+
+listner_thread=Thread.new do
+	while true
+		Thread.new(server.accept) do |client_sock|
+			client_first_message=client_sock.recv($MAX_MESSAGE_SIZE)
+			log("Received message from client: #{client_first_message}")
+			if (client_first_message=="receiving new assignment\n")
+				log("Assigning task... ")
+				current_chunk=0	
+				lock.synchronize{current_chunk=get_chunk(data_array)}
+				log("Decided on task #{current_chunk}")
+				client_sock.write("#{d}:#{n}:#{breakpoint}:#{current_chunk}:#{total_chunks}")
+				client_sock.close
+			elsif (client_first_message=="sending info\n")
+				log("Getting info from client... ")
+				client_sock.write("Bring it on\n")
+				client_answer=client_sock.recv($MAX_MESSAGE_SIZE)
+				assignment,filename, client_result=client_answer.split(":::")
+				log("Got the following result:\nAssignment=#{assignment}\n#{filename}\n#{client_result}")
+				File.open(filename, "w") {|file| file.write(client_result)}
+				if filename==parameters_to_filename(d,n,breakpoint,total_chunks,assignment)
+					mark_assignment_finished(data_array,assignment)
+				end
+			else
+				log("Not sure what client wants")
+				client_sock.write("What do you want?\n")
+			end
+		end
+	end
+end
+
+listner_thread.join #waiting enter to finish
+#gets

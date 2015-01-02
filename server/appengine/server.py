@@ -14,7 +14,7 @@ from google.appengine.ext.webapp import template
 from google.appengine.ext import db
 from google.appengine.api import users
 
-# Precomputed values using 'all' predicate
+# Precomputed values of 3d general case
 precomputed = {1 : 1,
                2 : 3,
                3 : 15,
@@ -27,17 +27,17 @@ precomputed = {1 : 1,
                10: 8294738 }
 
 class Config:
-  client_version = 1.2     	# Which client version the server is able to communicate with.
+  client_version = "1.3"     	# Which client version the server is able to communicate with.
   
-  pred_name = "full-convex" 	# Which predicae should the client use.  
-  n0 = 6		   	# At wich size we want to split the counting.
-  n = 10       			# Polycube size we want to count.
+  algo_id = 0               	# Which counting algorithm to use. Refer to the client for available options.  
+  n0 = 3		   	# At wich size we want to split the counting.
+  n = 5       			# Polycube size we want to count.
 
   max_id = precomputed[n0] 	# Total Number of policubes of size n0. Determined by pre-running Redelmier sequentially with pred=all.
-  num_of_jobs = 300 		# To how many jobs we want to split the counting.
+  num_of_jobs = 3 		# To how many jobs we want to split the counting.
   secret_hash_length = 32
   password = 'GreenSwimming' 	# Password for protected features  
-  default_batch_size = 50 	# When jobs are created in batches.
+  default_batch_size = 1 	# When jobs are created in batches.
   
 
 class Job(db.Model):
@@ -64,6 +64,7 @@ class DataCounter(db.Model):
   date_started = db.DateTimeProperty(auto_now_add=True)
   date_last = db.DateTimeProperty()
   cpu_time = db.FloatProperty()
+  t = db.IntegerProperty()
 
   @staticmethod
   def get():
@@ -76,6 +77,7 @@ class DataCounter(db.Model):
       c.reported_ids = 0
       c.date_last = None
       c.cpu_time = 0.0
+      c.t = 0 # TEST: TODO: REMOVE
     return c
 
 class ResultsCounter(db.Model):
@@ -102,16 +104,10 @@ def gen_random_word(length):
 def gen_key(low, hight):
   return "%d_%d_%d_%d" % (Config.n, Config.n0, low, hight)
 
-"""
-This page is used to initialize our operations.
-"""
+
 class Init(webapp2.RequestHandler):
   def get(self):
     password = self.request.get('password')
-    try:
-      njobs = int(self.request.get('njobs'))
-    except:
-      njobs = Config.default_batch_size
 
     if password != Config.password:
       self.response.out.write("Wrong password: %s" % password)
@@ -128,7 +124,7 @@ class Init(webapp2.RequestHandler):
 
     size = int(math.ceil(float(Config.max_id) / Config.num_of_jobs))
     
-    for i in range(counter.created_jobs, min(counter.created_jobs + njobs, Config.num_of_jobs - 1)):
+    for i in range(counter.created_jobs, min(counter.created_jobs + Config.default_batch_size, Config.num_of_jobs - 1)):
       self.create_stub_job(i*size, (i+1)*size) 
       counter.created_jobs += 1
       counter.created_ids += size
@@ -151,12 +147,6 @@ class Init(webapp2.RequestHandler):
     j.put()
     self.response.out.write("%s\t%s\n<br>\n" % (Job.get_by_key_name(key_name).low_id,Job.get_by_key_name(key_name).hight_id))
 
-
-"""
-This will allocate a single job to a requesting party. The order of allocation is
-unallocated jobs first and then allocated jobs with no results, ordered by their
-date (oldest will be reallocated first). 
-"""
 class Allocate(webapp2.RequestHandler):
   def get(self):
     
@@ -166,25 +156,28 @@ class Allocate(webapp2.RequestHandler):
       
       c = DataCounter.get()
       c.allocated_ids += job.hight_id - job.low_id
+      c.t += 1      
+      print "allocate", c.t
       c.put()
+     
+     
+
     else:
       job = db.GqlQuery("SELECT * FROM Job WHERE date_reported = NULL ORDER BY date_allocated ASC LIMIT 10",).get()
       if not job:
         # All jobs are done!
         self.response.out.write("%s 0 0 0 0 0 0" % (Config.client_version))
         return
-
     job.ip_allocated = self.request.remote_addr
     job.date_allocated = datetime.today()
     job.put()
 
-    self.response.out.write("%s %s %s %d %d %d %d" % (Config.client_version, job.secret_hash, Config.pred_name, job.n, job.n0, job.low_id, job.hight_id))
+    self.response.out.write("%s %s %s %d %d %d %d" % (Config.client_version, job.secret_hash, Config.algo_id, job.n, job.n0, job.low_id, job.hight_id))
 
-"""
-This page allows clients reporting results of run jobs.
-We use a secret and an ip comparison as a protection against mistakes
-or deliberate tampering with the db.
-"""
+    cc = DataCounter.get()
+    print cc.allocated_ids
+    print cc
+
 class Report(webapp2.RequestHandler):
   def get(self):
     secret = self.request.get('secret')
@@ -211,6 +204,7 @@ class Report(webapp2.RequestHandler):
     c.reported_ids += job.hight_id - job.low_id
     c.date_last = datetime.today()
     c.cpu_time += cpu_time
+    print "report", c.t
     c.put()   
 
     for r in res:
@@ -226,9 +220,7 @@ class Report(webapp2.RequestHandler):
       countr.result += int(x[1])
       countr.put()
   
-""" 
-This page displays info about progress and results.
-"""
+
 class Info(webapp2.RequestHandler):
   def get(self):
     password = self.request.get('password')
