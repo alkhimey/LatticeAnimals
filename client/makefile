@@ -1,4 +1,17 @@
-CFLAGS=-c -Wall -O2
+CXX=g++
+
+COMMON_FLAGS=-c -Wall -std=c++0x
+
+CFLAGS=-c -Wall -O2 -std=c++0x
+CFLAGS_DBG=-c -Wall -std=c++0x -g
+
+#CFLAGS=$(CFLAGS_DBG)
+
+LFLAGS=-Wall -O2 -std=c++0x
+LFLAGS_DBG=-Wall -std=c++0x -g
+
+#LFLAGS=$(LFLAGS_DBG)
+
 
 # Use ':=' instead of '=' to avoid multiple evaluation of NOW.
 NOW := $(shell date)
@@ -6,48 +19,66 @@ NOW := $(shell date)
 OBJ_DIR=obj
 BIN_DIR=bin
 
-LINUX_NAME=redelemeier-linux
-WIN_NAME=redelemeier-win.exe
+RELEASE_DIR=release
+DEBUG_DIR=debug
+
+LINUX_SUFFIX=linux
+WINDOWS_SUFFIX=windows
+
+EXE_PREFIX=client
 
 HEADERS=$(wildcard *.h)
 SRCS=$(wildcard *.cpp)
-OBJS=$(addprefix $(OBJ_DIR)/, $(filter-out main.o, $(SRCS:.cpp=.o)))
-
-LINUX_BINARY=$(BIN_DIR)/$(LINUX_NAME)
+ 
 
 
 .PHONY: clean all
 
-all: set_linux_vars make_directories linkage
-	echo $(NOW)	
+all: make_directories link_linux_release link_windows_release link_linux_debug link_windows_debug
 
 
 make_directories:
+	echo $(OBJ_DIR)/$(RELEASE_DIR)xxx_$(LINUX_SUFFIX).o
+
 	mkdir -p $(OBJ_DIR)
 	mkdir -p $(BIN_DIR)
+	mkdir -p $(OBJ_DIR)/$(RELEASE_DIR)
+	mkdir -p $(BIN_DIR)/$(RELEASE_DIR)
+	mkdir -p $(OBJ_DIR)/$(DEBUG_DIR)
+	mkdir -p $(BIN_DIR)/$(DEBUG_DIR)
 
-set_linux_vars:
-#	$(eval BINARY_NAME:=$(LINUX_NAME))
-	$(eval CXX:=g++)
-#	$(eval OBJ_SUFFIX:=linux.o)
+link_linux_release: $(addprefix $(OBJ_DIR)/$(RELEASE_DIR)/, $(SRCS:.cpp=_$(LINUX_SUFFIX).o)) 
+	$(CXX) -O2 $(COMMON_FLAGS) $^ $(AFTER_FLAGS) -o $(BIN_DIR)/$(RELEASE_DIR)/$(EXE_PREFIX)_$(LINUX_SUFFIX)
+
+link_windows_release: $(addprefix $(OBJ_DIR)/$(DEBUG_DIR)/, $(SRCS:.cpp=_$(WINDOWS_SUFFIX).o))
+
+	$(CXX) -O2 $(COMMON_FLAGS) $^ $(AFTER_FLAGS) -o $(BIN_DIR)/$(RELEASE_DIR)/$(EXE_PREFIX)_$(WINDOWS_SUFFIX)
+
+link_linux_debug: $(addprefix $(OBJ_DIR)/$(DEBUG_DIR)/, $(SRCS:.cpp=_$(LINUX_SUFFIX).o))
+	$(CXX) -g $(COMMON_FLAGS) $^ -o $(BIN_DIR)/$(DEBUG_DIR)/$(EXE_PREFIX)_$(LINUX_SUFFIX)
+
+link_windows_debug: $(addprefix $(OBJ_DIR)/$(DEBUG_DIR)/, $(SRCS:.cpp=_$(WINDOWS_SUFFIX).o))
+	$(CXX) -g $(COMMON_FLAGS) $^ $(AFTER_FLAGS) -o $(BIN_DIR)/$(DEBUG_DIR)/$(EXE_PREFIX)_$(WINDOWS_SUFFIX)
 
 
-#set_windows_vars:
-#	$(eval CXX:=i586-mingw32msvc-g++)
-#	$(eval OBJ_SUFFIX:=win.o)
-#	$(eval AFTER_FLAGS:=-lws2_32)
 
 
-linkage: $(OBJS) main.cpp
-	$(CXX) main.cpp $(OBJS) $(AFTER_FLAGS) -o $(LINUX_BINARY)
+$(OBJ_DIR)/$(RELEASE_DIR)/%_$(LINUX_SUFFIX).o: %.cpp %.h
+	$(CXX) -c -O2 $(COMMON_FLAGS) -o $@ $<
 
-#$(OBJ_DIR)/main.o: main.cpp
-#	$(CXX) $(CFLAGS) -o $@ $<
+$(OBJ_DIR)/$(RELEASE_DIR)/%_$(WINDOWS_SUFFIX).o: %.cpp %.h
+	$(CXX) -c -O2 $(COMMON_FLAGS) -o $@ $<
 
-$(OBJ_DIR)/%.o: %.cpp %.h
-	$(CXX) $(CFLAGS) -o $@ $<
+$(OBJ_DIR)/$(DEBUG_DIR)/%_$(LINUX_SUFFIX).o: %.cpp %.h
+	$(CXX) -c -g $(COMMON_FLAGS) -o $@ $<
+
+$(OBJ_DIR)/$(DEBUG_DIR)/%_$(WINDOWS_SUFFIX).o: %.cpp %.h
+	$(CXX) -c -g $(COMMON_FLAGS) -o $@ $<
+
+
+
 
 
 
 clean:
-	rm -rf $(OBJS) $(LINUX_BINARY)
+	rm -rf $(OBJ_DIR) $(BIN_DIR)

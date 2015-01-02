@@ -1,7 +1,7 @@
 #ifndef __SIMPLEHTTP_H
 #define __SIMPLEHTTP_H
 
-#define BUFFER_MAX_SIZE 40000
+#define BUFFER_MAX_SIZE 100000
 
 /* Performs simple http get. Returns the complete response including headers */
 char* httpGet(const char* host, const char* page, int portno);

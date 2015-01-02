@@ -10,52 +10,24 @@
 #include "redelemeier.h"
 #include "simplehttp.h"
 #include "counting_algorithm.h"
+#include "main.h"
 
 
 using namespace std;
 using namespace GetOpt;
 
 
-#define CLIENT_VERSION "1.3"
+#define CLIENT_VERSION "1.4"
 #define DEFAULT_HOST "alkhimey.appspot.com"
 #define ALLOCATE_PAGE "allocate"
 #define REPORT_PAGE "report"
 #define DEFAULT_PORN_NO 80
 #define DEFAULT_ALGO_ID 0
 
-#define NUMBER_OF_ALGORITHMS = 1;
-vector < const pair < string, CountingAlgorithm > > ALGORITHMS {
+#define NUMBER_OF_ALGORITHMS 1
+const pair< string, CountingAlgorithm > ALGORITHMS[NUMBER_OF_ALGORITHMS] {
   {"redelemeier-recursive-3d", redelemeier_recursive_3d}
 };
-
-/******************************************************************
- Helper functions declarations
-
-******************************************************************/
-
-/* Parse the parameters provided through command line. Exit and print help in case of error. */
-void parseCmdParams(int argc, char* argv[], string *host, int *portno, unsigned int *n, unsigned int *n0, count_t *lowId, count_t *hightId, int *algo_id);
-
-/* Get job details from the server. Returns false if no more jobs are available. Exit program in case of error */
-bool getJobFromServer(string host, int portno, string *secret, int *algo_id, unsigned int *n, unsigned int *n0, count_t *lowId, count_t *hightId);
-void reportResultsToServer(string host, int portno, string secret, count_t lowId, count_t hightId, vector<count_t> mycount, double cpuTime);
-
-/* Print the results in a nicely formatted way. */
-void printResults(vector<count_t> mycount);
-
-/* Read a word untill space from the buffer and store the word into the result string. Returns the beginning of the next word. */ 
-char* readNextWord(char* start, string* result);
-
-/* Will return 0 if the content is ill formatted. */
-int splitContent(char* content,string* secret, int* algo_id, unsigned int* n, unsigned int* n0, count_t* lowId, count_t* hightId);
-
-/* Parse the string s into the variable provided. Returns 0 is ill formatted, 1 otherwise. */
-int parseU(const char* s, unsigned int* u);
-int parseUll(const char* s, unsigned long long int* ull);
-
-/* Print usage info and exit */
-void usage(string);
-
 
 /*
  * Main entry point
@@ -76,24 +48,32 @@ int main(int argc, char* argv[]) {
   count_t lowId = 0, hightId = 1;
   int algo_id;
   
-  // Parse command line parameters
   parseCmdParams(argc, argv, &host,&portno, &n, &n0, &lowId, &hightId, &algo_id);
   
-  // Main loop (only one iteration if host is not present)
+  /* Main loop (only one iteration if host is not present) */
   while(true) {
  
-   // If we need to get more parameters from server
+    /* If we need to get more parameters from server */
     if(host != "") 
       if(getJobFromServer(host, portno, &secret, &algo_id, &n, &n0, &lowId, &hightId) == false)
 	break;
     
-    // Do the algortihm
-    //  cout << "Running Redelemeier algorithm with predicate " << predName << "..." << endl;
+    if(algo_id >= NUMBER_OF_ALGORITHMS) {
+      cout << "ERROR Client does not support alogrithm " << algo_id << endl;
+      exit(0);
+    }
 
+    if(n < n0) {
+      cout << "ERROR n < n0" << algo_id << endl;
+      exit(0);
+    }
+
+    cout << "Running algorithm \"" << ALGORITHMS[algo_id].first << "\"..." << endl;
     vector<count_t> results = vector<count_t>(n + 1, 0);
     clock_t c0, c1;
     c0 = clock();
-    //runRedelemeier(n, n0, lowId, hightId, predicateMap(predName), &mycount);
+
+
     ALGORITHMS[algo_id].second(n, n0, lowId, hightId, &results);    
 
     c1 = clock();
@@ -102,7 +82,7 @@ int main(int argc, char* argv[]) {
     printResults(results);
     cout << "This took " << t << " seconds" << endl;
     
-    // If we need to report result back to server
+    /* If we need to report result back to server */
     if(host != "") {
       reportResultsToServer(host, portno,  secret, lowId, hightId, results, t);
     } else {
@@ -117,11 +97,10 @@ int main(int argc, char* argv[]) {
   return 0;
 }
 
-/******************************************************************
- Helper functions definitions
 
-******************************************************************/
-
+/* Read a word starting at the start pointer, put it into result and return a pointer to a
+ * location aftr the word.
+ */
 char* readNextWord(char* start, string* result) {
   stringstream s;
   
@@ -138,7 +117,7 @@ char* readNextWord(char* start, string* result) {
 int splitContent(char* content, string* secret, int* algo_id, unsigned int* n, unsigned int* n0, count_t* lowId, count_t* hightId) {
   content = readNextWord(content, secret);
   
-  if(sscanf(content, "%d %d %d %llu %llu", algo_id, n, n0, lowId, hightId) != 4)
+  if(sscanf(content, "%d %d %d %llu %llu", algo_id, n, n0, lowId, hightId) != 5)
     return 0;
   
   return 1;
@@ -165,7 +144,14 @@ void usage(string app_name) {
   cout << app_name << " 10 8 154 1043" << endl;
   cout << app_name << "" << endl;
   cout << endl;
-  
+  cout << "Available algorithms are:" << endl;
+  for(int i = 0; i < NUMBER_OF_ALGORITHMS;i++){
+    cout << i << "\t" << ALGORITHMS[i].first;
+    if( i == DEFAULT_ALGO_ID)
+      cout << " (default)"; 
+    cout << endl;
+  }
+
 #if defined (_WIN32)
   system("pause");
 #endif
@@ -196,9 +182,9 @@ void parseCmdParams(int argc, char* argv[], string *host, int *portno, unsigned 
     } else {	
       if(ops >> OptionPresent("algo_id")) {
 	ops >> Option("algo_id", *algo_id);
-	// TODO: Make sure id exists!
-	//	if(predicateMap(*predName) == NULL)
-	//  throw GetOpt::GetOptEx();
+	if(*algo_id < 0 || *algo_id >= NUMBER_OF_ALGORITHMS)
+	  throw GetOpt::GetOptEx();
+
       } else {
 	*algo_id = DEFAULT_ALGO_ID;
       }
@@ -229,11 +215,12 @@ void parseCmdParams(int argc, char* argv[], string *host, int *portno, unsigned 
 
 
 bool getJobFromServer(string host, int portno,  string *secret, int* algo_id, unsigned int *n, unsigned int *n0, count_t *lowId, count_t *hightId) {
-  cout << "Connecting to server...." << endl;
+  cout << "Connecting to " << host << ":" << portno << "..." <<  endl;
   
   char* response = httpGet(host.c_str(), ALLOCATE_PAGE, portno);
   char* content = extractContent(response);
-  
+  free(response);	
+
   if(content == NULL) {
     cout << "ERROR extracting content from response" << endl;
     exit(0);
@@ -242,20 +229,17 @@ bool getJobFromServer(string host, int portno,  string *secret, int* algo_id, un
   string expectedVersion;
   
   content = readNextWord(content, &expectedVersion);
-  
-  if (expectedVersion.compare(CLIENT_VERSION) != 0) {
+
+  if (expectedVersion.compare("0") == 0) {
+    cout << "No more jobs available. Prorbably because server allocated all jobs." << endl;
+    return false;
+  } else if (expectedVersion.compare(CLIENT_VERSION) != 0) {
     cout << "Version mismatch, please download client version " << expectedVersion  << endl;
     return false;
   }
   
   if(splitContent(content, secret, algo_id, n, n0, lowId, hightId) == 0) {
     cout << "ERROR parsing server response" << endl;
-    return false;
-  }
-  
-  free(response);	
-  if (secret->compare("0") == 0) {
-    cout << "No more jobs available. Prorbably because server allocated all jobs." << endl;
     return false;
   }
   
@@ -269,10 +253,15 @@ void reportResultsToServer(string host, int portno, string secret, count_t lowId
   unsigned int i = 0;
   while(mycount[i] == 0)
     i++;
-  for(; i < mycount.size(); i++)
-    req << i << ":" << mycount[i] << "+";
+  for(; i < mycount.size(); i++) {
+    req << i << ":" << mycount[i];
+    if(i < mycount.size() - 1) {
+      req << "+";
+    }
+  }
   
-  free( httpGet(host.c_str(), req.str().c_str(), portno));
+  char* response = httpGet(host.c_str(), req.str().c_str(), portno);
+  free( response );
 }
 
 void printResults(vector<count_t> mycount) {
