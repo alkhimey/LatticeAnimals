@@ -11,6 +11,11 @@ char* httpGet(const char* host, const char* page, int portno);
 */
 char* extractContent(char* response);
 
+/**
+ * Is the response is an 200 http responsem.
+ */
+bool isResponseOk(char* response);
+
 #endif
 
 

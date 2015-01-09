@@ -6,7 +6,7 @@
 #if defined (_WIN32)
 
 #include <winsock2.h>
-#pragma comment(lib, "Ws2_32.lib"))
+//#pragma comment(lib, "Ws2_32.lib"))
 
 #else
 
@@ -16,10 +16,12 @@
 #include <netinet/in.h>
 #include <netdb.h> 
 
-
 #endif
 
 #include "simplehttp.h"
+
+
+static char buffer[BUFFER_MAX_SIZE];
 
 /* Some code is adapted from http://www.linuxhowtos.org/C_C++/socket.htm */
 
@@ -56,9 +58,9 @@ int connectTCP(const char* host, const char* page, int portno) {
 
 
     serv_addr.sin_family = AF_INET;
-    memcpy((char *)&serv_addr.sin_addr.s_addr, // Destination
-			(char *)server->h_addr,				// Source
-			server->h_length);					// Size
+    memcpy((char *)&serv_addr.sin_addr.s_addr,   // Destination
+			(char *)server->h_addr,	 // Source
+			server->h_length);       // Size
     serv_addr.sin_port = htons(portno);
 
 	// Conect to socket //
@@ -72,7 +74,6 @@ int connectTCP(const char* host, const char* page, int portno) {
 
 char* httpGet(const char* host, const char* page, int portno) {
   int sockfd, n;
-  char* buffer = (char*)calloc(BUFFER_MAX_SIZE + 1, sizeof(char));
 
 #if defined (_WIN32)
   WSADATA wsadata;
@@ -80,37 +81,51 @@ char* httpGet(const char* host, const char* page, int portno) {
     error("ERROR during WSAStartup");
 #endif
 	
-	sockfd = connectTCP(host, page, portno);
-    memset(buffer, 0, sizeof(buffer));
+  sockfd = connectTCP(host, page, portno);
+  memset(buffer, 0, sizeof(buffer));
     
-	sprintf(buffer, "GET /%s HTTP/1.0\r\nHost: %s\r\n\r\n", page, host);
-	//printf("%s", buffer);
+  sprintf(buffer, "GET /%s HTTP/1.0\r\nHost: %s\r\n\r\n", page, host);
 
-	n = send(sockfd,buffer,strlen(buffer), 0);
+  n = send(sockfd,buffer,strlen(buffer), 0);
 	
-    if (n < 0) 
-         error("ERROR writing to socket");
+  if (n < 0) 
+    error("ERROR writing to socket");
    
-	int count = 0;
-	do {
-		n = recv(sockfd, buffer + count, BUFFER_MAX_SIZE, 0);
-		if (n < 0) 
-			error("ERROR reading from socket");
+  int count = 0;
+  do {
+    n = recv(sockfd, buffer + count, BUFFER_MAX_SIZE - count, 0);
+    if (n < 0) {
+      error("ERROR reading from socket");
+      
+    }
 
-		count += n;
-	} while(n != 0);
+    count += n;
+  } while(n != 0);
 
 #if defined (_WIN32)
-	closesocket(sockfd);
-	WSACleanup();
+  closesocket(sockfd);
+  WSACleanup();
 #else
-	close(sockfd);
+  close(sockfd);
 #endif
 
 
-	return buffer;
+  return buffer;
 }
 
+
+bool isResponseOk(char* response) {
+  const char prefix[] = "HTTP/1.0 ";
+
+  char* i = strstr(response, prefix);
+  if (i == NULL) {
+    return false;
+  } else {
+    i += strlen(prefix);
+  }
+
+  return i[0] == '2' && i[1] == '0' && i[2] == '0';
+}
 
 char* extractContent(char* response) {
 	char* i = strstr(response, "\r\n\r\n");

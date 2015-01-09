@@ -435,3 +435,22 @@ void redelemeier_recursive_3d(unsigned int n,
 }
 
 
+void redelemeier_3d_line_convex(unsigned int n,
+				unsigned int n0,
+				count_t lowId,
+				count_t hightId,
+				vector<count_t>* results) {
+  runRedelemeier(n, n0, lowId, hightId, predConvex1_3d, results);
+
+}
+
+void redelemeier_3d_full_convex(unsigned int n,
+				unsigned int n0,
+				count_t lowId,
+				count_t hightId,
+				vector<count_t>* results) {
+  runRedelemeier(n, n0, lowId, hightId, predConvex2_3d, results);
+
+}
+
+

@@ -8,7 +8,7 @@ from django.dispatch import receiver
 
 class Config(models.Model):
   date_created           = models.DateTimeField(auto_now_add=True)
-  date_activated         = models.DateTimeField(auto_now_add=True)
+  date_activated         = models.DateTimeField(null=True)
   client_version         = models.CharField(max_length=8, help_text = "Which client version this config can communicate with")
   algo_id                = models.IntegerField(help_text = "Which counting algorithm to tell the client to use")
   n                      = models.IntegerField(help_text = "The size of the polyocubes we want to count")
@@ -17,7 +17,7 @@ class Config(models.Model):
   num_of_jobs            = models.IntegerField(help_text = "To how many jobs we want to split the counting")
   secret_hash_length     = models.IntegerField(default=32, help_text = "Max is 64")
   minutes_before_realloc = models.IntegerField(default=10, help_text = "Minutes to wait before an unreported job can be reallocated")
-
+    
   def __str__(self):
     return "%d %d v%s-%d" % (self.n, self.n0, self.client_version, self.algo_id)
 

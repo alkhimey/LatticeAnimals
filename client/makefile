@@ -1,16 +1,9 @@
-CXX=g++
+LINUX_CXX=g++
+WINDOWS_CXX=i586-mingw32msvc-g++
 
-COMMON_FLAGS=-c -Wall -std=c++0x
-
-CFLAGS=-c -Wall -O2 -std=c++0x
-CFLAGS_DBG=-c -Wall -std=c++0x -g
-
-#CFLAGS=$(CFLAGS_DBG)
-
-LFLAGS=-Wall -O2 -std=c++0x
-LFLAGS_DBG=-Wall -std=c++0x -g
-
-#LFLAGS=$(LFLAGS_DBG)
+COMMON_FLAGS=-Wall -O2
+WINDOWS_AFTER_FLAGS=-lws2_32 # linkage only
+DEBUG_FLAGS=-g
 
 
 # Use ':=' instead of '=' to avoid multiple evaluation of NOW.
@@ -48,32 +41,31 @@ make_directories:
 	mkdir -p $(BIN_DIR)/$(DEBUG_DIR)
 
 link_linux_release: $(addprefix $(OBJ_DIR)/$(RELEASE_DIR)/, $(SRCS:.cpp=_$(LINUX_SUFFIX).o)) 
-	$(CXX) -O2 $(COMMON_FLAGS) $^ $(AFTER_FLAGS) -o $(BIN_DIR)/$(RELEASE_DIR)/$(EXE_PREFIX)_$(LINUX_SUFFIX)
+	$(LINUX_CXX)   $(COMMON_FLAGS) $^ $(AFTER_FLAGS) -o $(BIN_DIR)/$(RELEASE_DIR)/$(EXE_PREFIX)_$(LINUX_SUFFIX)
 
-link_windows_release: $(addprefix $(OBJ_DIR)/$(DEBUG_DIR)/, $(SRCS:.cpp=_$(WINDOWS_SUFFIX).o))
-
-	$(CXX) -O2 $(COMMON_FLAGS) $^ $(AFTER_FLAGS) -o $(BIN_DIR)/$(RELEASE_DIR)/$(EXE_PREFIX)_$(WINDOWS_SUFFIX)
+link_windows_release: $(addprefix $(OBJ_DIR)/$(RELEASE_DIR)/, $(SRCS:.cpp=_$(WINDOWS_SUFFIX).o))
+	$(WINDOWS_CXX) $(COMMON_FLAGS) $^ $(WINDOWS_AFTER_FLAGS) -o $(BIN_DIR)/$(RELEASE_DIR)/$(EXE_PREFIX)_$(WINDOWS_SUFFIX)
 
 link_linux_debug: $(addprefix $(OBJ_DIR)/$(DEBUG_DIR)/, $(SRCS:.cpp=_$(LINUX_SUFFIX).o))
-	$(CXX) -g $(COMMON_FLAGS) $^ -o $(BIN_DIR)/$(DEBUG_DIR)/$(EXE_PREFIX)_$(LINUX_SUFFIX)
+	$(LINUX_CXX)    $(DEBUG_FLAGS) $(COMMON_FLAGS) $^ -o $(BIN_DIR)/$(DEBUG_DIR)/$(EXE_PREFIX)_$(LINUX_SUFFIX)
 
 link_windows_debug: $(addprefix $(OBJ_DIR)/$(DEBUG_DIR)/, $(SRCS:.cpp=_$(WINDOWS_SUFFIX).o))
-	$(CXX) -g $(COMMON_FLAGS) $^ $(AFTER_FLAGS) -o $(BIN_DIR)/$(DEBUG_DIR)/$(EXE_PREFIX)_$(WINDOWS_SUFFIX)
+	$(WINDOWS_CXX)  $(DEBUG_FLAGS) $(COMMON_FLAGS) $^ $(WINDOWS_AFTER_FLAGS) -o $(BIN_DIR)/$(DEBUG_DIR)/$(EXE_PREFIX)_$(WINDOWS_SUFFIX)
 
 
 
 
 $(OBJ_DIR)/$(RELEASE_DIR)/%_$(LINUX_SUFFIX).o: %.cpp %.h
-	$(CXX) -c -O2 $(COMMON_FLAGS) -o $@ $<
+	$(LINUX_CXX)   -c $(COMMON_FLAGS) -o $@ $<
 
 $(OBJ_DIR)/$(RELEASE_DIR)/%_$(WINDOWS_SUFFIX).o: %.cpp %.h
-	$(CXX) -c -O2 $(COMMON_FLAGS) -o $@ $<
+	$(WINDOWS_CXX) -c $(COMMON_FLAGS) -o $@ $<
 
 $(OBJ_DIR)/$(DEBUG_DIR)/%_$(LINUX_SUFFIX).o: %.cpp %.h
-	$(CXX) -c -g $(COMMON_FLAGS) -o $@ $<
+	$(LINUX_CXX)   -c $(DEBUG_FLAGS) $(COMMON_FLAGS) -o $@ $<
 
 $(OBJ_DIR)/$(DEBUG_DIR)/%_$(WINDOWS_SUFFIX).o: %.cpp %.h
-	$(CXX) -c -g $(COMMON_FLAGS) -o $@ $<
+	$(WINDOWS_CXX) -c $(DEBUG_FLAGS) $(COMMON_FLAGS) -o $@ $<
 
 
 

@@ -15,8 +15,9 @@ class ReadOnlyModelAdmin(admin.ModelAdmin):
 
 @admin.register(Config)
 class ConfigAdmin(admin.ModelAdmin):
-    def get_readonly_fields(self, request, obj=None):
-        if obj: # editing an existing object
-            return self.readonly_fields + ('n', 'n0')
-        return self.readonly_fields
+    None
+#    def get_readonly_fields(self, request, obj=None):
+#        if obj: # editing an existing object
+#            return self.readonly_fields + ('n', 'n0')
+#        return self.readonly_fields
 

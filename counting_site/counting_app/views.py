@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from counting_app.models import Job, ResultCounter
+from counting_app.models import Config,Job, ResultCounter
 from django.db.models import Q
 
 import math
@@ -13,6 +13,7 @@ def gen_random_word(length):
     word += random.choice('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789')
   return word
 
+"""
 precomputed = {1 : 1,
                2 : 3,
                3 : 15,
@@ -23,11 +24,20 @@ precomputed = {1 : 1,
                8 : 162913,
                9 : 1152870,
                10: 8294738 }
+"""
 
 def allocate(request):
+  c = Config.objects.order_by('-date_activated').first()
+
+  if c == None:
+    return HttpResponse("0 0 0 0 0 0 0")
+    
+  j = Job.objects.filter(date_reported = None, config = c).order_by('date_allocated').first()  # TODO: Prevent reallocating older than X hours, can use in code as the result of query in oldest anyway
   
-  j = Job.objects.filter(date_reported = None).order_by('date_allocated').first()  # TODO: Prevent reallocating older than X hours, can use in code as the result of query in oldest anyway
   if not j:
+    return HttpResponse("0 0 0 0 0 0 0")
+
+  if j.date_allocated != None and (datetime.today() - j.date_allocated).min < timedelta(minutes=j.config.minutes_before_realloc):
     return HttpResponse("0 0 0 0 0 0 0")
 
   j.secret_hash     = gen_random_word(j.config.secret_hash_length)

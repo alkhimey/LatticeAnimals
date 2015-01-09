@@ -62,6 +62,10 @@ DATABASES = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
         'ATOMIC_REQUESTS' : True,
+        # for sqlite write lock timeout (20 seconds)
+        'OPTIONS': {
+            'timeout': 20,
+        },
     }
 }
 
@@ -76,7 +80,7 @@ USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
+USE_TZ = False # Currently, ignore time zones.
 
 
 # Static files (CSS, JavaScript, Images)

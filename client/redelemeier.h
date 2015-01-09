@@ -18,3 +18,16 @@ void redelemeier_recursive_3d(unsigned int n,
 			      vector<count_t>* results);
 
 
+void redelemeier_3d_line_convex(unsigned int n,
+				unsigned int n0,
+				count_t lowId,
+				count_t hightId,
+				vector<count_t>* results);
+
+void redelemeier_3d_full_convex(unsigned int n,
+				unsigned int n0,
+				count_t lowId,
+				count_t hightId,
+				vector<count_t>* results);
+
+

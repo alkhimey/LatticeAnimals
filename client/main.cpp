@@ -17,16 +17,21 @@ using namespace std;
 using namespace GetOpt;
 
 
-#define CLIENT_VERSION "1.4"
-#define DEFAULT_HOST "alkhimey.appspot.com"
+#define CLIENT_VERSION "1.5"
+#define DEFAULT_HOST "melon"
 #define ALLOCATE_PAGE "allocate"
 #define REPORT_PAGE "report"
-#define DEFAULT_PORN_NO 80
+#define DEFAULT_PORN_NO 8000
 #define DEFAULT_ALGO_ID 0
 
-#define NUMBER_OF_ALGORITHMS 1
-const pair< string, CountingAlgorithm > ALGORITHMS[NUMBER_OF_ALGORITHMS] {
-  {"redelemeier-recursive-3d", redelemeier_recursive_3d}
+#define NUMBER_OF_ALGORITHMS 3
+
+
+
+pair< string, CountingAlgorithm > ALGORITHMS[NUMBER_OF_ALGORITHMS] = {
+  make_pair("redelemeier-recursive-3d", redelemeier_recursive_3d),
+  make_pair("redelemeier-3d-line-convex", redelemeier_3d_line_convex),
+  make_pair("redelemeier-3d-full-convex", redelemeier_3d_full_convex)
 };
 
 /*
@@ -56,7 +61,7 @@ int main(int argc, char* argv[]) {
     /* If we need to get more parameters from server */
     if(host != "") 
       if(getJobFromServer(host, portno, &secret, &algo_id, &n, &n0, &lowId, &hightId) == false)
-	break;
+	continue;
     
     if(algo_id >= NUMBER_OF_ALGORITHMS) {
       cout << "ERROR Client does not support alogrithm " << algo_id << endl;
@@ -218,8 +223,14 @@ bool getJobFromServer(string host, int portno,  string *secret, int* algo_id, un
   cout << "Connecting to " << host << ":" << portno << "..." <<  endl;
   
   char* response = httpGet(host.c_str(), ALLOCATE_PAGE, portno);
+
+  if(isResponseOk(response) == false) {
+    cout << "Server error" << endl;
+    return false;
+  }
+
+
   char* content = extractContent(response);
-  free(response);	
 
   if(content == NULL) {
     cout << "ERROR extracting content from response" << endl;
@@ -248,20 +259,28 @@ bool getJobFromServer(string host, int portno,  string *secret, int* algo_id, un
 }
 
 void reportResultsToServer(string host, int portno, string secret, count_t lowId, count_t hightId, vector<count_t> mycount, double cpuTime) {
+
+  bool temp = false; // TODO: Remove
+
   stringstream req;
   req << REPORT_PAGE << "?secret=" << secret << "&low=" << lowId << "&hight=" << hightId << "&cpu=" << cpuTime << "&res=";
   unsigned int i = 0;
   while(mycount[i] == 0)
     i++;
   for(; i < mycount.size(); i++) {
+    temp = true;
     req << i << ":" << mycount[i];
     if(i < mycount.size() - 1) {
       req << "+";
     }
   }
-  
-  char* response = httpGet(host.c_str(), req.str().c_str(), portno);
-  free( response );
+
+  if (!temp || mycount.size() < 11) {
+    cout << "!!!!!!!!!!!!!!!" << secret << " " << lowId << " "<<hightId << endl;
+      exit(0);
+  }
+
+  httpGet(host.c_str(), req.str().c_str(), portno);
 }
 
 void printResults(vector<count_t> mycount) {
