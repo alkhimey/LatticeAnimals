@@ -10,6 +10,7 @@
 #include "redelemeier.h"
 #include "simplehttp.h"
 #include "counting_algorithm.h"
+#include "convex_counter.h"
 #include "main.h"
 
 
@@ -24,14 +25,13 @@ using namespace GetOpt;
 #define DEFAULT_PORN_NO 8000
 #define DEFAULT_ALGO_ID 0
 
-#define NUMBER_OF_ALGORITHMS 3
-
-
+#define NUMBER_OF_ALGORITHMS 4
 
 pair< string, CountingAlgorithm > ALGORITHMS[NUMBER_OF_ALGORITHMS] = {
   make_pair("redelemeier-recursive-3d", redelemeier_recursive_3d),
   make_pair("redelemeier-3d-line-convex", redelemeier_3d_line_convex),
-  make_pair("redelemeier-3d-full-convex", redelemeier_3d_full_convex)
+  make_pair("redelemeier-3d-full-convex", redelemeier_3d_full_convex),
+  make_pair("line_convex_counter_3d", line_convex_multi_dim_v2::line_convex_counter_3d)
 };
 
 /*
