@@ -1,3 +1,4 @@
+
 #include <stack>
 #include <vector>
 #include <iostream>
@@ -6,6 +7,7 @@
 #include <map>
 #include <limits.h>
 #include <assert.h>
+#include <fstream>
 
 #include <iostream>
 
@@ -22,7 +24,7 @@ namespace line_convex_multi_dim_v2 {
   /**
    * Maximum number of cells in 1D stick. Big enough to avoid out of range checks for any N we will use.
    */
-  enum { MAX_COORD = 20 }; // TODO: Reset to large number after debugging 
+  enum { MAX_COORD = 50 }; // TODO: Reset to large number after debugging 
   enum { ORIGIN_COORD = MAX_COORD / 2 };
 
   class Cell;
@@ -56,6 +58,18 @@ namespace line_convex_multi_dim_v2 {
     }
 
     bool operator< (const Cell &other) const {
+      int s = 0;
+      
+      for(int d = X; d < LAST_DIM; d++) {
+	s += abs(ORIGIN_COORD - _c[d]);
+	s -= abs(ORIGIN_COORD - other._c[d]);
+      }
+
+      if(s < 0) {
+	return true;
+      } else if(s > 0) {
+	return false;
+      }
 
       for(int d = X; d < LAST_DIM; d++) {
 	if(_c[d] < other._c[d]) {
@@ -89,9 +103,11 @@ namespace line_convex_multi_dim_v2 {
     bool _not_empty[LAST_DIM][MAX_COORD][MAX_COORD]; // is row not empty 
 
     unsigned int _size;
+
+    ofstream* _f;
     
   public:
-    ConvexPolycube(Cell origin) {
+    ConvexPolycube(Cell origin, ofstream* dump_file) {
       
       for (int ix = 0; ix < MAX_COORD; ix++) {
 	for (int iy = 0; iy < MAX_COORD; iy++){
@@ -112,6 +128,8 @@ namespace line_convex_multi_dim_v2 {
       _not_empty[Z][origin[X]][origin[Y]] = true;
 
       _size = 1;
+
+      _f = dump_file;
     }
     
     /** 
@@ -134,10 +152,10 @@ namespace line_convex_multi_dim_v2 {
       	   _not_empty[Z][c[X]][c[Y]] == false)) {
 
 	// Debug-check if it is convex
-	if (debug_test_convexity(c) != true) {
-	  debug_print_p();
-	  assert(false);
-	}
+	//if (debug_test_convexity(c) != true) {
+	//  debug_print_p();
+	//  assert(false);
+	//}
 
 	_p[c[X]][c[Y]][c[Z]] = true;
 	
@@ -150,10 +168,10 @@ namespace line_convex_multi_dim_v2 {
       }
 
       // Debug-check if it is not convex
-      if (debug_test_convexity(c) != false){
-	debug_print_p();
-	assert(false);
-      }
+      //if (debug_test_convexity(c) != false){
+      //  debug_print_p();
+      //  assert(false);
+      //}
 
 
 
@@ -217,6 +235,23 @@ namespace line_convex_multi_dim_v2 {
     }
 
 
+    void dump_to_file() const {
+      if (_f->is_open() == false) {
+	return;
+      }
+
+      for (int i = 0; i < MAX_COORD; i++) {
+	for(int j = 0; j < MAX_COORD; j++) {
+	  for(int k = 0; k < MAX_COORD; k++) {
+	    if (_p[i][j][k] == true) {
+	      (*_f) << "(" << i - ORIGIN_COORD << "," << j - ORIGIN_COORD << "," << k - ORIGIN_COORD << ") ";
+	    }
+	  }
+	}
+      }
+      (*_f) << endl;
+    }
+
     void debug_print_not_empty(Dim3d D) const {
       for (int ix = 0; ix < MAX_COORD; ix++) {
 	for (int iy = 0; iy < MAX_COORD; iy++) {
@@ -252,8 +287,9 @@ namespace line_convex_multi_dim_v2 {
 	}
       }
       cout << endl;
-
     }
+
+
 
     bool debug_test_convexity(Cell c) {
       assert(_p[c[X]][c[Y]][c[Z]] == false);
@@ -325,8 +361,6 @@ namespace line_convex_multi_dim_v2 {
    */
   void add_new_neig_to_untried(Cell& _c, UntriedSet* u, ConvexPolycube* p) {
     vector<Cell> candidates;
-       
-
 
     candidates.push_back(Cell(_c[X] + 1, _c[Y],     _c[Z]));
     candidates.push_back(Cell(_c[X],     _c[Y] + 1, _c[Z]));     
@@ -381,9 +415,11 @@ namespace line_convex_multi_dim_v2 {
       }
       
       // count only polyominoes that are in the search range
-      if(p.size() >= n0 && curr_id >= low_id && curr_id < hight_id)
+      if(p.size() >= n0 && curr_id >= low_id && curr_id < hight_id) {
+	p.dump_to_file();
 	(*results)[p.size()]++;
-      
+      }
+	
       if(p.size() < n0 || (p.size() >= n0 && p.size() < n && curr_id >= low_id && curr_id < hight_id) ) {
 	UntriedSet untried_next = UntriedSet(untried);
 
@@ -414,10 +450,12 @@ namespace line_convex_multi_dim_v2 {
 			      unsigned int n0,
 			      count_t low_id,
 			      count_t hight_id,
-			      vector<count_t>* results) {
+			      vector<count_t>* results,
+			      std::ofstream* dump_file) {
+
     Cell origin(ORIGIN_COORD, ORIGIN_COORD, ORIGIN_COORD);
 
-    ConvexPolycube p(origin);
+    ConvexPolycube p(origin, dump_file);
 
 
     UntriedSet untried;

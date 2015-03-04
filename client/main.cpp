@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <sstream>
 #include <stdlib.h>
@@ -46,14 +47,17 @@ pair< string, CountingAlgorithm > ALGORITHMS[NUMBER_OF_ALGORITHMS] = {
  */
 int main(int argc, char* argv[]) {
   string host = "";
+  string dump_file_name = "";
   int portno;
   string secret;
   
   unsigned int n, n0 = 0;
   count_t lowId = 0, hightId = 1;
   int algo_id;
+
+  ofstream dump_file;
   
-  parseCmdParams(argc, argv, &host,&portno, &n, &n0, &lowId, &hightId, &algo_id);
+  parseCmdParams(argc, argv, &host,&portno, &n, &n0, &lowId, &hightId, &algo_id, &dump_file_name);
   
   /* Main loop (only one iteration if host is not present) */
   while(true) {
@@ -73,17 +77,29 @@ int main(int argc, char* argv[]) {
       exit(0);
     }
 
+    if (dump_file_name != "") {
+      cout << "Opening dump file "<< dump_file_name <<"..." << endl;
+
+      dump_file.open(dump_file_name.c_str());
+      if (dump_file.fail()) {
+	cout << "ERROR opening dump file " << dump_file_name << endl;
+      }
+    }
+
     cout << "Running algorithm \"" << ALGORITHMS[algo_id].first << "\"..." << endl;
+  
+    
     vector<count_t> results = vector<count_t>(n + 1, 0);
     clock_t c0, c1;
     c0 = clock();
 
-
-    ALGORITHMS[algo_id].second(n, n0, lowId, hightId, &results);    
+    ALGORITHMS[algo_id].second(n, n0, lowId, hightId, &results, &dump_file);    
 
     c1 = clock();
     double t = (c1-c0)/ (double) CLOCKS_PER_SEC;		
     
+    dump_file.close();
+
     printResults(results);
     cout << "This took " << t << " seconds" << endl;
     
@@ -145,6 +161,7 @@ void usage(string app_name) {
   cout << app_name << " -s localhost" << endl;
   cout << app_name << " -s localhost -p 8080" << endl;
   cout << app_name << " 8" << endl;
+  cout << app_name << " 8 -f [output_file_name]" << endl;
   cout << app_name << " 8 --algo_id 1" << endl;
   cout << app_name << " 10 8 154 1043" << endl;
   cout << app_name << "" << endl;
@@ -164,7 +181,7 @@ void usage(string app_name) {
 }
 
 void parseCmdParams(int argc, char* argv[], string *host, int *portno, unsigned int *n, unsigned int *n0, 
-		    count_t *lowId, count_t *hightId, int *algo_id) {
+		    count_t *lowId, count_t *hightId, int *algo_id, string* dump_file_name) {
   GetOpt_pp ops(argc, argv);
   ops.exceptions_all(); 
   bool success = true;
@@ -185,6 +202,12 @@ void parseCmdParams(int argc, char* argv[], string *host, int *portno, unsigned 
       ops >> Option('p', "port", *portno);
       *host = DEFAULT_HOST;
     } else {	
+      if(ops >> OptionPresent('f')) {
+	ops >> Option('f', *dump_file_name);
+      } else {
+	*dump_file_name = "";
+      }
+
       if(ops >> OptionPresent("algo_id")) {
 	ops >> Option("algo_id", *algo_id);
 	if(*algo_id < 0 || *algo_id >= NUMBER_OF_ALGORITHMS)

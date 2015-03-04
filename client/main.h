@@ -11,7 +11,11 @@
 ******************************************************************/
 
 /* Parse the parameters provided through command line. Exit and print help in case of error. */
-void parseCmdParams(int argc, char* argv[], string *host, int *portno, unsigned int *n, unsigned int *n0, count_t *lowId, count_t *hightId, int *algo_id);
+void parseCmdParams(int argc, char* argv[], 
+		    string *host, int *portno, 
+		    unsigned int *n, unsigned int *n0, count_t *lowId, count_t *hightId, 
+		    int *algo_id, 
+		    string* dump_file_name);
 
 /* Get job details from the server. Returns false if no more jobs are available. Exit program in case of error */
 bool getJobFromServer(string host, int portno, string *secret, int *algo_id, unsigned int *n, unsigned int *n0, count_t *lowId, count_t *hightId);

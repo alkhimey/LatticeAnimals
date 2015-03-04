@@ -3,6 +3,7 @@
 #include <iostream>
 #include <set>
 #include <algorithm>
+#include <fstream>
 #include <map>
 #include <limits.h>
 #include "redelemeier.h"
@@ -47,43 +48,47 @@ public:
 
 /* Run redelemeier algorithm. The result is returned through mycount. */ 
 void runRedelemeier(unsigned int n,
-					unsigned int n0,
-					count_t lowId,
-					count_t hightId,
-					Predicate pred,
-					vector<count_t>* mycount);
+		    unsigned int n0,
+		    count_t lowId,
+		    count_t hightId,
+		    Predicate pred,
+		    vector<count_t>* mycount, 
+		    std::ofstream* dump_file);
 
 
 /* The actual implementation of the algorithm. */
 void recursiveCount(CellStack& p,
-					CellSet untried, 
-					unsigned int n, 
-					unsigned int n0,
-					count_t& curr_id,
-					count_t low_id,
-					count_t hight_id,
-					Predicate pred,
-					vector<count_t>* mycount);
+		    CellSet untried, 
+		    unsigned int n, 
+		    unsigned int n0,
+		    count_t& curr_id,
+		    count_t low_id,
+		    count_t hight_id,
+		    Predicate pred,
+		    vector<count_t>* mycount, 
+		    std::ofstream* dump_file);
 
 void recursiveCountV2(CellStack& p,
-					CellSet untried, 
-					unsigned int n, 
-					unsigned int n0,
-					count_t& curr_id,
-					count_t low_id,
-					count_t hight_id,
-					Predicate pred,
-					vector<count_t>* mycount);
+		      CellSet untried, 
+		      unsigned int n, 
+		      unsigned int n0,
+		      count_t& curr_id,
+		      count_t low_id,
+		      count_t hight_id,
+		      Predicate pred,
+		      vector<count_t>* mycount, 
+		      std::ofstream* dump_file);
 
 void iterativeCount(CellStack& p,
-					CellSet untried, 
-					unsigned int n, 
-					unsigned int n0,
-					count_t& curr_id,
-					count_t low_id,
-					count_t hight_id,
-					Predicate pred,
-					vector<count_t>* mycount);
+		    CellSet untried, 
+		    unsigned int n, 
+		    unsigned int n0,
+		    count_t& curr_id,
+		    count_t low_id,
+		    count_t hight_id,
+		    Predicate pred,
+		    vector<count_t>* mycount, 
+		    std::ofstream* dump_file);
 
 
 /* Predicate that matches 3d fully-convex polycubes. */
@@ -95,7 +100,8 @@ bool predConvex1_3d(CellStack& p);
 /* Predicate that matches all polycubes */
 bool predAll(CellStack& p);
 
-
+/* Dumps cell stack to file */
+void dump_cell_stack(CellStack& p, std::ofstream* dump_file);
 
 
 CellSet Cell3::getNeigh() {
@@ -144,19 +150,19 @@ bool isNewUntried(Cell c, CellStack& p) {
 	return true;
 }
 
-void runRedelemeier(unsigned int n, unsigned int n0, count_t lowId, count_t hightId, Predicate pred, vector<count_t>* mycount) {
+void runRedelemeier(unsigned int n, unsigned int n0, count_t lowId, count_t hightId, Predicate pred, vector<count_t>* mycount, std::ofstream* dump_file) {
 	CellStack p;
 	CellSet untried;
 	untried.insert(Cell(0,0,0));
 	count_t currId = 0;
 	
-	recursiveCountV2(p, untried, n, n0, currId, lowId, hightId, pred, mycount); 
+	recursiveCountV2(p, untried, n, n0, currId, lowId, hightId, pred, mycount, dump_file); 
 	//iterativeCount(p, untried, n, n0, currId, lowId, hightId, pred, mycount);
 }
 
 void recursiveCount(CellStack& p, CellSet untried, unsigned int n,
 					unsigned int n0, count_t &curr_id, count_t low_id, count_t hight_id,
-					Predicate pred, vector<count_t>* mycount) 
+		    Predicate pred, vector<count_t>* mycount, std::ofstream* dump_file) 
 {	
    	while(!untried.empty()) {
 	
@@ -167,8 +173,10 @@ void recursiveCount(CellStack& p, CellSet untried, unsigned int n,
 		untried.erase(untried.begin());
 
 		// Count only polyominoes that match the predicate and are in the search range //
-		if(pred(p) && p.size() >= n0 && curr_id >= low_id && curr_id < hight_id)
+		if(pred(p) && p.size() >= n0 && curr_id >= low_id && curr_id < hight_id) {
 			(*mycount)[p.size()]++;
+			dump_cell_stack(p, dump_file);
+		}
 
 		if(p.size() < n0 || (p.size() >= n0 && p.size() < n && curr_id >= low_id && curr_id < hight_id) ) {
 			CellSet untried_next = CellSet(untried);
@@ -176,7 +184,7 @@ void recursiveCount(CellStack& p, CellSet untried, unsigned int n,
 			for(CellSet::iterator iter = s.begin(); iter != s.end(); iter++) 
 				if(isNewUntried(*iter, p))
 					untried_next.insert(*iter);		
-			recursiveCount(p, untried_next, n, n0, curr_id, low_id, hight_id, pred, mycount);
+			recursiveCount(p, untried_next, n, n0, curr_id, low_id, hight_id, pred, mycount, dump_file);
 		}
 		
 		if(p.size() == n0) 
@@ -190,7 +198,7 @@ void recursiveCount(CellStack& p, CellSet untried, unsigned int n,
 
 void recursiveCountV2(CellStack& p, CellSet untried, unsigned int n,
 					unsigned int n0, count_t &curr_id, count_t low_id, count_t hight_id,
-					Predicate pred, vector<count_t>* mycount) 
+		      Predicate pred, vector<count_t>* mycount, std::ofstream* dump_file) 
 {	
    	while(!untried.empty()) {
 	
@@ -201,8 +209,10 @@ void recursiveCountV2(CellStack& p, CellSet untried, unsigned int n,
 		untried.erase(untried.begin());
 
 		// Count only polyominoes that match the predicate and are in the search range //
-		if(pred(p) && p.size() >= n0 && curr_id >= low_id && curr_id < hight_id)
+		if(pred(p) && p.size() >= n0 && curr_id >= low_id && curr_id < hight_id) {
 			(*mycount)[p.size()]++;
+			dump_cell_stack(p, dump_file);
+		}
 
 		if(p.size() < n0 || (p.size() >= n0 && p.size() < n && curr_id >= low_id && curr_id < hight_id) ) {
 			CellSet untried_next = CellSet(untried);
@@ -210,7 +220,7 @@ void recursiveCountV2(CellStack& p, CellSet untried, unsigned int n,
 			for(CellSet::iterator iter = s.begin(); iter != s.end(); iter++) 
 				if(isNewUntried(*iter, p))
 					untried_next.insert(*iter);		
-			recursiveCount(p, untried_next, n, n0, curr_id, low_id, hight_id, pred, mycount);
+			recursiveCount(p, untried_next, n, n0, curr_id, low_id, hight_id, pred, mycount, dump_file);
 		}
 		
 		if(p.size() == n0) 
@@ -307,7 +317,7 @@ bool predConvex1_3d(CellStack& p) {
 
 /* Matches vectors that represents a valid 2d polyomino that is also line convex.
    Helper for predConvex2_3d*/ 
-inline bool isConvexPolyomino_2d(vector<pair<int, int> > p) {
+bool isConvexPolyomino_2d(vector<pair<int, int> > p) {
 	int minx = INT_MAX, miny = INT_MAX;
 	int maxx = INT_MIN, maxy = INT_MIN;
 
@@ -394,6 +404,9 @@ inline bool isConvexPolyomino_2d(vector<pair<int, int> > p) {
 	return p.size() == visited.size();
 }
 
+
+
+
 /* Matches only convex polycube according to the second definition.
    works only with 3d polycubes.
    A polycube is convex if every cross-section (parallel to xy, xz or yz is convex 2d polyomino.
@@ -419,6 +432,26 @@ bool predConvex2_3d(CellStack& p) {
 	return true;
 }
 
+/**
+ * Dump the polycube into a file. Used for debugging purposes.
+ */ 
+void dump_cell_stack(CellStack& p, std::ofstream* dump_file) {
+
+  if (dump_file->is_open() == false) {
+    return;
+  }
+
+  
+  for(CellStack::iterator iter = p.begin(); iter < p.end(); iter++) {
+  
+    Cell c = *iter;
+    (*dump_file) << "(" << c.x << "," << c.y << "," << c.z << ") ";
+  }
+  
+  (*dump_file) << endl;
+
+
+}
 
 
 
@@ -426,10 +459,11 @@ void redelemeier_recursive_3d(unsigned int n,
 			      unsigned int n0,
 			      count_t lowId,
 			      count_t hightId,
-			      vector<count_t>* results) {
+			      vector<count_t>* results,
+			      std::ofstream* dump_file) {
   
 
-  runRedelemeier(n, n0, lowId, hightId, predAll, results);
+  runRedelemeier(n, n0, lowId, hightId, predAll, results, dump_file);
 
 
 }
@@ -439,8 +473,9 @@ void redelemeier_3d_line_convex(unsigned int n,
 				unsigned int n0,
 				count_t lowId,
 				count_t hightId,
-				vector<count_t>* results) {
-  runRedelemeier(n, n0, lowId, hightId, predConvex1_3d, results);
+				vector<count_t>* results, 
+				std::ofstream* dump_file) {
+  runRedelemeier(n, n0, lowId, hightId, predConvex1_3d, results, dump_file);
 
 }
 
@@ -448,8 +483,9 @@ void redelemeier_3d_full_convex(unsigned int n,
 				unsigned int n0,
 				count_t lowId,
 				count_t hightId,
-				vector<count_t>* results) {
-  runRedelemeier(n, n0, lowId, hightId, predConvex2_3d, results);
+				vector<count_t>* results,
+				std::ofstream* dump_file) {
+  runRedelemeier(n, n0, lowId, hightId, predConvex2_3d, results, dump_file);
 
 }
 
