@@ -1,15 +1,36 @@
-./bin/debug/client_linux $1 --algo_id 1 -f r1.res1
-./bin/debug/client_linux $1 --algo_id 3 -f r2.res1
+#!/bin/bash
 
-cat r1.res1 | while read line; do echo $line | sed 's/ /\n/g' | sort | gawk '{line=line " " $0} END {print line}' ; done > r1.res2
+res_dir=results
 
+mkdir results
 
-cat r2.res1 | while read line; do echo $line | sed 's/ /\n/g' | sort | gawk '{line=line " " $0} END {print line}' ; done > r2.res2
+fn1=$res_dir/algo1_$1
+fn3=$res_dir/algo3_$1 
 
-sort r1.res2 > r1.res3
-sort r2.res2 > r2.res3
+date
 
-diff r1.res3 r2.res3
+echo Running...
+time ./bin/release/client_linux $1 --algo_id 1 -f $fn1.dump | tee $fn1.out
 
-rm r1.res*
-rm r2.res*
+date
+
+echo Sorting...
+time sort $fn1.dump  > $fn1.sorted.dump
+
+date 
+
+echo Running...
+time ./bin/release/client_linux $1 --algo_id 3 -f $fn3.dump | tee $fn3.out
+
+date
+
+echo Sorting...
+time sort $fn3.dump  > $fn3.sorted.dump
+
+date
+
+echo Comparing...
+time diff $fn1.sorted.dump $fn3.sorted.dump | tee $res_dir/result_$1.diff
+
+date
+echo Finished!

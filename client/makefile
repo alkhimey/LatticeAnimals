@@ -4,7 +4,7 @@ WINDOWS_CXX=i586-mingw32msvc-g++
 COMMON_FLAGS=-Wall
 WINDOWS_AFTER_FLAGS=-lws2_32 # linkage only
 DEBUG_FLAGS=-g
-RELEASE_FLAGS=-O2
+RELEASE_FLAGS=-O3 -march=native -DNDEBUG
 
 
 # Use ':=' instead of '=' to avoid multiple evaluation of NOW.

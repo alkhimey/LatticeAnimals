@@ -1,4 +1,3 @@
-
 #include <stack>
 #include <vector>
 #include <iostream>
@@ -8,6 +7,9 @@
 #include <limits.h>
 #include <assert.h>
 #include <fstream>
+#include <string>
+#include <sstream>
+#include <set>
 
 #include <iostream>
 
@@ -24,7 +26,7 @@ namespace line_convex_multi_dim_v2 {
   /**
    * Maximum number of cells in 1D stick. Big enough to avoid out of range checks for any N we will use.
    */
-  enum { MAX_COORD = 50 }; // TODO: Reset to large number after debugging 
+  enum { MAX_COORD = 30 }; // TODO: Reset to large number after debugging 
   enum { ORIGIN_COORD = MAX_COORD / 2 };
 
   class Cell;
@@ -35,6 +37,7 @@ namespace line_convex_multi_dim_v2 {
   typedef int coord_t;
   typedef Dim3d dim_t;
   typedef priority_queue<Cell, vector<Cell>, CompareCells> UntriedSet; 
+
 
   class Cell {
   private:
@@ -65,26 +68,20 @@ namespace line_convex_multi_dim_v2 {
 	s -= abs(ORIGIN_COORD - other._c[d]);
       }
 
-      if(s < 0) {
-	return true;
-      } else if(s > 0) {
-	return false;
-      }
-
-      for(int d = X; d < LAST_DIM; d++) {
-	if(_c[d] < other._c[d]) {
-	  return true;
-	} else if(_c[d] > other._c[d]) {
-	  return false;
-	}
-      }
-
-      return false;
+      return s < 0;
     }
+
 
     coord_t &operator[](dim_t d) {
       return _c[d];
     }
+
+    coord_t &operator[](unsigned int d) {
+      assert(d >= X && d < LAST_DIM);
+      return _c[d];
+    }
+
+
   };
     
 
@@ -95,12 +92,34 @@ namespace line_convex_multi_dim_v2 {
     }
   } ;
 
+  /**
+   * Used for debugging, lexicographical order.
+   */
+  struct CompareCellsLexi{
+    bool operator()(Cell a, Cell b) const {
+      
+      if (a[X] == b[X] && a[Y] == b[Y] && a[Z] < b[Z])	return true; 
+      if (a[X] == b[X] && a[Y] < b[Y])		       	return true;
+      if (a[X] < b[X])				       	return true;
+      return false;   
+    }
+  } ;
+
+
   class ConvexPolycube {
   private:
        
     
     bool _p[MAX_COORD][MAX_COORD][MAX_COORD];
     bool _not_empty[LAST_DIM][MAX_COORD][MAX_COORD]; // is row not empty 
+
+    // Used for debugging
+
+    coord_t _min[LAST_DIM];
+    coord_t _max[LAST_DIM];
+    
+    set<Cell, CompareCellsLexi> _p_list;
+
 
     unsigned int _size;
 
@@ -129,6 +148,13 @@ namespace line_convex_multi_dim_v2 {
 
       _size = 1;
 
+      for(int d = X; d < LAST_DIM; d++) {
+	_min[d] = origin[d];
+	_max[d] = origin[d];
+      }
+
+      _p_list.insert(origin);
+
       _f = dump_file;
     }
     
@@ -139,7 +165,18 @@ namespace line_convex_multi_dim_v2 {
     bool add(Cell c) {
       assert(_p[c[X]][c[Y]][c[Z]] == false);
 
-      if ((_p[c[X] + 1][c[Y]][c[Z]] ||
+      assert(c[X] < MAX_COORD);
+      assert(c[X] >= 0);
+
+      assert(c[Y] < MAX_COORD);
+      assert(c[Y] >= 0);
+
+      assert(c[Z] < MAX_COORD);
+      assert(c[Z] >= 0);
+
+
+      /*if(debug_test_convexity(c)) {*/
+      /*if ((_p[c[X] + 1][c[Y]][c[Z]] ||
            _p[c[X] - 1][c[Y]][c[Z]] ||
       	   _not_empty[X][c[Y]][c[Z]] == false) &&
 	  
@@ -149,14 +186,8 @@ namespace line_convex_multi_dim_v2 {
 	  
       	  (_p[c[X]][c[Y]][c[Z] + 1] ||
       	   _p[c[X]][c[Y]][c[Z] - 1] ||
-      	   _not_empty[Z][c[X]][c[Y]] == false)) {
-
-	// Debug-check if it is convex
-	//if (debug_test_convexity(c) != true) {
-	//  debug_print_p();
-	//  assert(false);
-	//}
-
+      	   _not_empty[Z][c[X]][c[Y]] == false)) {*/
+      {
 	_p[c[X]][c[Y]][c[Z]] = true;
 	
 	_not_empty[X][c[Y]][c[Z]] = true;
@@ -164,18 +195,18 @@ namespace line_convex_multi_dim_v2 {
 	_not_empty[Z][c[X]][c[Y]] = true;
 
 	_size++;
+
+	_p_list.insert(c);
+
+	for(int d = X; d < LAST_DIM; d++) {
+	  _min[d] = min(_min[d], c[d]);
+	  _max[d] = max(_max[d], c[d]);
+	}
+	
+	
 	return true;
       }
-
-      // Debug-check if it is not convex
-      //if (debug_test_convexity(c) != false){
-      //  debug_print_p();
-      //  assert(false);
-      //}
-
-
-
-
+      
       return false;
     }
     
@@ -183,6 +214,9 @@ namespace line_convex_multi_dim_v2 {
      * Removes cell from polycube.
      */
     void remove(Cell c) {
+      // There is an assumption here that c is always the last cell that was added.
+      // TODO: It might be better to implement this function as a "pop" function
+
       assert(_p[c[X]][c[Y]][c[Z]] == true);
       
       if (_p[c[X] + 1][c[Y]][c[Z]] == false && _p[c[X] - 1][c[Y]][c[Z]] == false) {
@@ -196,12 +230,50 @@ namespace line_convex_multi_dim_v2 {
       if (_p[c[X]][c[Y]][c[Z] + 1] == false &&  _p[c[X]][c[Y]][c[Z] - 1] == false) {
 	_not_empty[Z][c[X]][c[Y]] = false;
       }
-
-
+      
       _size--;
       _p[c[X]][c[Y]][c[Z]] = false;
-    }
       
+      _p_list.erase(c);
+      
+      for(int d = X; d < LAST_DIM; d++) {
+	// Update _min
+	if (c[d] == _min[d]) {
+	  bool need_update = true;
+
+	  for(set<Cell, CompareCellsLexi>::iterator iter = _p_list.begin(); iter != _p_list.end(); iter++) {
+	    Cell c2 = *iter;
+
+	    if (c2[d] == _min[d]) {
+	      need_update = false;
+	      break;
+	    }
+	  }
+	  if(need_update) {
+	    _min[d] ++;
+	  }
+	}
+
+	// Update _max
+	if (c[d] == _max[d]) {
+	  bool need_update = true;
+	  
+	  for(set<Cell, CompareCellsLexi>::const_iterator iter = _p_list.begin(); iter != _p_list.end(); iter++) {
+	    Cell c2 = *iter;
+	    
+	    if (c2[d] == _max[d]) {
+	      need_update = false;
+	      break;
+	    }
+	  } 
+	  if(need_update) {
+	    _max[d] --;
+	  }
+	}
+      }  
+    }
+  
+
     /** 
      * Returns true if the cell is adjucent to the current polycube. 
      * Ignoring the provided cell. 
@@ -240,17 +312,26 @@ namespace line_convex_multi_dim_v2 {
 	return;
       }
 
-      for (int i = 0; i < MAX_COORD; i++) {
-	for(int j = 0; j < MAX_COORD; j++) {
-	  for(int k = 0; k < MAX_COORD; k++) {
-	    if (_p[i][j][k] == true) {
-	      (*_f) << "(" << i - ORIGIN_COORD << "," << j - ORIGIN_COORD << "," << k - ORIGIN_COORD << ") ";
-	    }
-	  }
-	}
+      vector<string> sorted_vertices;
+
+      
+      for(set<Cell, CompareCellsLexi>::const_iterator iter = _p_list.begin(); iter != _p_list.end(); iter++) {
+	Cell c = *iter;
+	stringstream strm;
+	strm <<  "(" << c[X] - ORIGIN_COORD << "," << c[Y] - ORIGIN_COORD << "," << c[Z] - ORIGIN_COORD << ") ";
+	
+	(*_f) << strm.str();
+	//sorted_vertices.insert(upper_bound( sorted_vertices.begin(), sorted_vertices.end(), s ), s );
       }
-      (*_f) << endl;
+
+      
+
+      /*for(vector<string>::iterator iter = sorted_vertices.begin(); iter < sorted_vertices.end(); iter++) { 
+	(*_f) << *iter;
+	}*/
+      (*_f) << endl; 
     }
+
 
     void debug_print_not_empty(Dim3d D) const {
       for (int ix = 0; ix < MAX_COORD; ix++) {
@@ -260,6 +341,7 @@ namespace line_convex_multi_dim_v2 {
 	cout << endl;
       }
     }
+
 
     bool debug_is_empty() const {
       bool ret = false;
@@ -287,17 +369,83 @@ namespace line_convex_multi_dim_v2 {
 	}
       }
       cout << endl;
+
+
+      for(set<Cell, CompareCellsLexi>::const_iterator iter = _p_list.begin(); iter != _p_list.end(); iter++) {
+	Cell c = *iter;
+	stringstream strm;
+	strm <<  "(" << c[X] - ORIGIN_COORD << "," << c[Y] - ORIGIN_COORD << "," << c[Z] - ORIGIN_COORD << ") ";
+	cout << strm.str();
+      }
+
+      cout << endl;
+
+      cout << "min[X]: " << _min[X] << "max[X]: " << _max[X] << "min[Y]: " << _min[Y] << "max[Y]: " << _max[Y] << "min[Z]: " << _min[Z] << "max[Z]: " << _max[Z] << endl;
+      
     }
 
 
+    bool debug_test_convexity() {
 
-    bool debug_test_convexity(Cell c) {
-      assert(_p[c[X]][c[Y]][c[Z]] == false);
-      _p[c[X]][c[Y]][c[Z]] = true;
-      
-      bool ret = true;
+      for(int ix = _min[X]; ix <= _max[X]; ix++) {
+	for(int iy = _min[Y]; iy <= _max[Y]; iy++) {
+	  bool started = false;
+	  bool stopped = false;
+	  for(int iz = _min[Z]; iz <= _max[Z]; iz++) {
+	    if(_p[ix][iy][iz] && stopped)
+	      return false;
+	    else if(_p[ix][iy][iz])
+	      started = true;
+	    else if(!_p[ix][iy][iz] && started)
+	      stopped = true;
+	  }
+	}
+      }
 
-      for (int i = 0; i < MAX_COORD; i++) {
+      for(int ix = _min[X]; ix <= _max[X]; ix++) {
+	for(int iz = _min[Z]; iz <= _max[Z]; iz++) {
+	  bool started = false;
+	  bool stopped = false;
+	  for(int iy = _min[Y]; iy <= _max[Y]; iy++) {
+	    if(_p[ix][iy][iz] && stopped)
+	      return false;
+	    else if(_p[ix][iy][iz])
+	      started = true;
+	    else if(!_p[ix][iy][iz] && started)
+	      stopped = true;
+	  }
+	}
+      }
+
+      for(int iz = _min[Z]; iz <= _max[Z]; iz++) {
+	for(int iy = _min[Y]; iy <= _max[Y]; iy++) {
+	  bool started = false;
+	  bool stopped = false;
+	  for(int ix = _min[X]; ix <= _max[X]; ix++) {
+	    if(_p[ix][iy][iz] && stopped)
+	      return false;
+	    else if(_p[ix][iy][iz])
+	      started = true;
+	    else if(!_p[ix][iy][iz] && started)
+	      stopped = true;
+	  }
+	}
+      }
+
+      return true;
+      /*
+      for(int d = X; d < LAST_DIM; d++) {
+	
+	for (int xi = 0; xi < MAX_COORD; xi++) {
+	  for(int yi = 0; yi < MAX_COORD; yi++) {
+	    for(int zi = 0; zi < MAX_COORD; zi++) {
+
+	    }
+	  }
+	}
+      */
+
+      /*      for (int i = 0; i < MAX_COORD; i++) {
 	for(int j = 0; j < MAX_COORD; j++) {
 	  bool start[LAST_DIM] = {false, false, false};
 	  bool end[LAST_DIM] = {false, false, false};
@@ -307,7 +455,7 @@ namespace line_convex_multi_dim_v2 {
 	      if (end[X] == false) {
 		start[X] = true;
 	      } else {
-		ret =  false;
+		return false;
 	      }      
 	    } else {
 	      if (start[X] == true) {
@@ -319,7 +467,7 @@ namespace line_convex_multi_dim_v2 {
 	      if (end[Y] == false) {
 		start[Y] = true;
 	      } else {
-		ret =  false;
+		return false;
 	      }      
 	    } else {
 	      if (start[Y] == true) {
@@ -331,7 +479,7 @@ namespace line_convex_multi_dim_v2 {
 	      if (end[Z] == false) {
 		start[Z] = true;
 	      } else {
-		ret =  false;
+		return false;
 	      }      
 	    } else {
 	      if (start[Z] == true) {
@@ -342,9 +490,20 @@ namespace line_convex_multi_dim_v2 {
 	}
       }
 
+      return true;*/
+
+    }
+
+
+    bool debug_test_convexity(Cell c) {
+      assert(_p[c[X]][c[Y]][c[Z]] == false);
+      
+      _p[c[X]][c[Y]][c[Z]] = true;
+      bool ret = debug_test_convexity();
       _p[c[X]][c[Y]][c[Z]] = false;
+
       return ret;
-    } // debug_test_convexity
+    } 
     
 
     
@@ -399,25 +558,64 @@ namespace line_convex_multi_dim_v2 {
 			     count_t low_id, 
 			     count_t hight_id,
 			     vector<count_t>* results) {
-   
+    
+    static bool global_pruned = false;
+    static ConvexPolycube pruned_p(p);
+    bool local_pruned = false;
 	
     while(untried.empty() == false) {
       
+      
+  
       if(curr_id >= hight_id)
 	return;
       
       Cell c = untried.top();
       untried.pop();
 
+
       // add will fail if the new polycube is not convex
       if (p.add(c) == false) {
 	continue;
       }
       
+      // TODO: Artium DEBUG
+      static int x4 = 1;
+      if(p.size() == 4) {
+	cout << x4 << "/86" << endl;
+	x4++;
+      }
+      ////
+
+
       // count only polyominoes that are in the search range
       if(p.size() >= n0 && curr_id >= low_id && curr_id < hight_id) {
-	p.dump_to_file();
-	(*results)[p.size()]++;
+
+	// DEBUG TODO REMOVE if statement
+	if(p.debug_test_convexity()) {
+
+	  p.dump_to_file();
+	  (*results)[p.size()]++;
+
+	  if (global_pruned) {
+	    cout << "Ommited due to pruning: ";
+	    p.debug_print_p();
+	    cout << "Pruned by: ";
+	    pruned_p.debug_print_p();
+	    cout << "Last added: x=" << c[X] << " y=" << c[Y] << " z=" << c[Z] << endl;
+	  }
+
+
+	} else {
+	  
+	  if (!global_pruned) {
+	    global_pruned = true;
+	    local_pruned = true;
+	    pruned_p = p;
+	  }
+	  
+	  
+	}
       }
 	
       if(p.size() < n0 || (p.size() >= n0 && p.size() < n && curr_id >= low_id && curr_id < hight_id) ) {
@@ -434,6 +632,11 @@ namespace line_convex_multi_dim_v2 {
       if(p.size() == n0) 
 	curr_id++;
       
+      if(local_pruned) {
+	local_pruned = false;
+	global_pruned = false;
+      }
+
       p.remove(c);
     }
   }
@@ -463,6 +666,8 @@ namespace line_convex_multi_dim_v2 {
     
     count_t curr_id = 0;
   
+    p.dump_to_file(); // dump (0,0,0)
+
     redelemeier_recursive(p, 
 			  untried, 
 			  n,
@@ -472,21 +677,6 @@ namespace line_convex_multi_dim_v2 {
 			  hight_id,
 			  results); 
     p.remove(origin);
-
-    /*  p.debug_print_not_empty(X);
-    cout << "*\t*\t*\t*\t**"<<endl;
-    p.debug_print_not_empty(Y);
-    cout << "*\t*\t*\t*\t**"<<endl;
-    p.debug_print_not_empty(Z);
-    cout << p.debug_is_empty() << endl;
-    */	
-    
-    
   }
 
-
-
 };
-
-
-

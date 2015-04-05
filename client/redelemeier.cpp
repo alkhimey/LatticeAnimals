@@ -1,6 +1,8 @@
 #include <stack>
 #include <vector>
 #include <iostream>
+#include <string>
+#include <sstream>
 #include <set>
 #include <algorithm>
 #include <fstream>
@@ -208,6 +210,16 @@ void recursiveCountV2(CellStack& p, CellSet untried, unsigned int n,
 		p.push_back(*(untried.begin()));
 		untried.erase(untried.begin());
 
+
+		// TODO: Artium DEBUG
+		static int x4 = 1;
+		if(p.size() == 4) {
+		  cout << x4 << "/86" << endl;
+		  x4++;
+		} 
+		////
+
+
 		// Count only polyominoes that match the predicate and are in the search range //
 		if(pred(p) && p.size() >= n0 && curr_id >= low_id && curr_id < hight_id) {
 			(*mycount)[p.size()]++;
@@ -220,7 +232,7 @@ void recursiveCountV2(CellStack& p, CellSet untried, unsigned int n,
 			for(CellSet::iterator iter = s.begin(); iter != s.end(); iter++) 
 				if(isNewUntried(*iter, p))
 					untried_next.insert(*iter);		
-			recursiveCount(p, untried_next, n, n0, curr_id, low_id, hight_id, pred, mycount, dump_file);
+			recursiveCountV2(p, untried_next, n, n0, curr_id, low_id, hight_id, pred, mycount, dump_file);
 		}
 		
 		if(p.size() == n0) 
@@ -442,15 +454,19 @@ void dump_cell_stack(CellStack& p, std::ofstream* dump_file) {
   }
 
   
+  vector<string> sorted_vertices;
   for(CellStack::iterator iter = p.begin(); iter < p.end(); iter++) {
-  
     Cell c = *iter;
-    (*dump_file) << "(" << c.x << "," << c.y << "," << c.z << ") ";
+    stringstream strm;
+    strm << "(" << c.x << "," << c.y << "," << c.z << ") ";
+    string s = strm.str();
+    sorted_vertices.insert(upper_bound( sorted_vertices.begin(), sorted_vertices.end(), s ), s );
   }
-  
+      
+  for(vector<string>::iterator iter = sorted_vertices.begin(); iter < sorted_vertices.end(); iter++) { 
+    (*dump_file) << *iter;
+  }
   (*dump_file) << endl;
-
-
 }
 
 
@@ -476,6 +492,8 @@ void redelemeier_3d_line_convex(unsigned int n,
 				vector<count_t>* results, 
 				std::ofstream* dump_file) {
   runRedelemeier(n, n0, lowId, hightId, predConvex1_3d, results, dump_file);
+  cout << endl; // TODO:ARTIUM DEBUG
+
 
 }
 
