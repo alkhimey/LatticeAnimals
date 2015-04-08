@@ -10,6 +10,7 @@
 #include <string>
 #include <sstream>
 #include <set>
+#include <list>
 
 #include <iostream>
 
@@ -32,12 +33,14 @@ namespace line_convex_multi_dim_v2 {
   class Cell;
   class ConvexPolycube;
   class CompareCells;
+  class CompareCellsGeo;
 
   typedef unsigned long long count_t;
   typedef int coord_t;
   typedef Dim3d dim_t;
-  typedef priority_queue<Cell, vector<Cell>, CompareCells> UntriedSet; 
-
+  
+  //typedef priority_queue<Cell, vector<Cell>, CompareCells> UntriedSet; 
+  typedef list<Cell> UntriedSet;
 
   class Cell {
   private:
@@ -85,7 +88,9 @@ namespace line_convex_multi_dim_v2 {
   };
     
 
-  /// Used to create a min-heap
+  /** 
+   * Compare cells using absolute distance from origin
+   */
   struct CompareCells{
     bool operator()(Cell lhs, Cell rhs) const {
       return rhs < lhs;
@@ -104,6 +109,7 @@ namespace line_convex_multi_dim_v2 {
       return false;   
     }
   } ;
+  
 
 
   class ConvexPolycube {
@@ -113,6 +119,16 @@ namespace line_convex_multi_dim_v2 {
     bool _p[MAX_COORD][MAX_COORD][MAX_COORD];
     bool _not_empty[LAST_DIM][MAX_COORD][MAX_COORD]; // is row not empty 
 
+    
+    unsigned int _size;
+
+    /// Geodesical distance
+    coord_t _geo_dist[MAX_COORD][MAX_COORD][MAX_COORD];
+
+    /// Is the distance matrix valid
+    bool    _geo_dist_valid;
+
+
     // Used for debugging
 
     coord_t _min[LAST_DIM];
@@ -121,7 +137,6 @@ namespace line_convex_multi_dim_v2 {
     set<Cell, CompareCellsLexi> _p_list;
 
 
-    unsigned int _size;
 
     ofstream* _f;
     
@@ -155,6 +170,9 @@ namespace line_convex_multi_dim_v2 {
 
       _p_list.insert(origin);
 
+
+      _geo_dist_valid = false;
+
       _f = dump_file;
     }
     
@@ -176,7 +194,7 @@ namespace line_convex_multi_dim_v2 {
 
 
       /*if(debug_test_convexity(c)) {*/
-      /*if ((_p[c[X] + 1][c[Y]][c[Z]] ||
+      if ((_p[c[X] + 1][c[Y]][c[Z]] ||
            _p[c[X] - 1][c[Y]][c[Z]] ||
       	   _not_empty[X][c[Y]][c[Z]] == false) &&
 	  
@@ -186,8 +204,8 @@ namespace line_convex_multi_dim_v2 {
 	  
       	  (_p[c[X]][c[Y]][c[Z] + 1] ||
       	   _p[c[X]][c[Y]][c[Z] - 1] ||
-      	   _not_empty[Z][c[X]][c[Y]] == false)) {*/
-      {
+      	   _not_empty[Z][c[X]][c[Y]] == false)) {
+      
 	_p[c[X]][c[Y]][c[Z]] = true;
 	
 	_not_empty[X][c[Y]][c[Z]] = true;
@@ -197,6 +215,8 @@ namespace line_convex_multi_dim_v2 {
 	_size++;
 
 	_p_list.insert(c);
+
+	_geo_dist_valid = false;
 
 	for(int d = X; d < LAST_DIM; d++) {
 	  _min[d] = min(_min[d], c[d]);
@@ -211,11 +231,10 @@ namespace line_convex_multi_dim_v2 {
     }
     
     /** 
-     * Removes cell from polycube.
+     * Removes cell c from polycube.
+     * There is an assumption here that c is always the last cell that was added.
      */
-    void remove(Cell c) {
-      // There is an assumption here that c is always the last cell that was added.
-      // TODO: It might be better to implement this function as a "pop" function
+    void remove(Cell c) { 
 
       assert(_p[c[X]][c[Y]][c[Z]] == true);
       
@@ -236,6 +255,8 @@ namespace line_convex_multi_dim_v2 {
       
       _p_list.erase(c);
       
+      _geo_dist_valid = false;
+
       for(int d = X; d < LAST_DIM; d++) {
 	// Update _min
 	if (c[d] == _min[d]) {
@@ -307,6 +328,86 @@ namespace line_convex_multi_dim_v2 {
     }
 
 
+    /**
+     * Run BFS algorthim starting at the origin
+     *
+     */
+    void run_bfs() {
+      
+      for (int ix = 0; ix < MAX_COORD; ix++) {
+	for (int iy = 0; iy < MAX_COORD; iy++){
+	  for (int iz = 0; iz < MAX_COORD; iz++){
+	    _geo_dist[ix][iy][iz] = -1;
+	  }
+	}
+      }
+
+      queue<Cell> q;
+
+      q.push(Cell(ORIGIN_COORD, ORIGIN_COORD, ORIGIN_COORD));
+
+      _geo_dist[ORIGIN_COORD][ORIGIN_COORD][ORIGIN_COORD] = 0;
+
+      while (q.empty() != false) {
+	vector<Cell> candidates;
+	Cell c = q.front();
+	q.pop();
+
+	candidates.push_back(Cell(c[X] + 1, c[Y],     c[Z]));
+	candidates.push_back(Cell(c[X],     c[Y] + 1, c[Z]));     
+	candidates.push_back(Cell(c[X],     c[Y],     c[Z] + 1));
+	candidates.push_back(Cell(c[X] - 1, c[Y],     c[Z]));
+	candidates.push_back(Cell(c[X],     c[Y] - 1, c[Z]));     
+	candidates.push_back(Cell(c[X],     c[Y],     c[Z] - 1));
+       
+	for (vector<Cell>::iterator iter=candidates.begin(); iter != candidates.end(); ++iter) {
+	  Cell c2 = *iter;
+	  if (_p[c2[X]][c2[Y]][c2[Z]] == true && _geo_dist[c2[X]][c2[Y]][c2[Z]] == -1) {
+	    q.push(c2);
+	    _geo_dist[c2[X]][c2[Y]][c2[Z]] = _geo_dist[c[X]][c[Y]][c[Z]] + 1;
+	  }
+	}
+      }
+
+      _geo_dist_valid = true; // untill next add or remove operation
+    }
+
+    /**
+     * Get geodesic distance of cell c which is a neighbour of the polycube.
+     */
+    coord_t get_geo_dist(Cell c) {
+
+      vector<Cell> candidates;
+
+      if(_geo_dist_valid == false) {
+	run_bfs();
+      }
+
+      candidates.push_back(Cell(c[X] + 1, c[Y],     c[Z]));
+      candidates.push_back(Cell(c[X],     c[Y] + 1, c[Z]));     
+      candidates.push_back(Cell(c[X],     c[Y],     c[Z] + 1));
+      candidates.push_back(Cell(c[X] - 1, c[Y],     c[Z]));
+      candidates.push_back(Cell(c[X],     c[Y] - 1, c[Z]));     
+      candidates.push_back(Cell(c[X],     c[Y],     c[Z] - 1));
+      
+      coord_t min = MAX_COORD * MAX_COORD * MAX_COORD + 1;
+
+      for (vector<Cell>::iterator iter=candidates.begin(); iter != candidates.end(); ++iter) {
+	Cell c2 = *iter;
+	coord_t dist = _geo_dist[c2[X]][c2[Y]][c2[Z]];
+
+	if (dist != -1 && dist < min) {
+	  min = dist;
+	}
+      }
+      assert(min < MAX_COORD * MAX_COORD * MAX_COORD + 1);
+      return min;
+    }
+
+
+    /**
+     * Write the polycube int the file whose handle was provided during construction
+     */
     void dump_to_file() const {
       if (_f->is_open() == false) {
 	return;
@@ -321,14 +422,9 @@ namespace line_convex_multi_dim_v2 {
 	strm <<  "(" << c[X] - ORIGIN_COORD << "," << c[Y] - ORIGIN_COORD << "," << c[Z] - ORIGIN_COORD << ") ";
 	
 	(*_f) << strm.str();
-	//sorted_vertices.insert(upper_bound( sorted_vertices.begin(), sorted_vertices.end(), s ), s );
+
       }
 
-      
-
-      /*for(vector<string>::iterator iter = sorted_vertices.begin(); iter < sorted_vertices.end(); iter++) { 
-	(*_f) << *iter;
-	}*/
       (*_f) << endl; 
     }
 
@@ -433,64 +529,6 @@ namespace line_convex_multi_dim_v2 {
       }
 
       return true;
-      /*
-      for(int d = X; d < LAST_DIM; d++) {
-	
-	for (int xi = 0; xi < MAX_COORD; xi++) {
-	  for(int yi = 0; yi < MAX_COORD; yi++) {
-	    for(int zi = 0; zi < MAX_COORD; zi++) {
-
-	    }
-	  }
-	}
-      */
-
-      /*      for (int i = 0; i < MAX_COORD; i++) {
-	for(int j = 0; j < MAX_COORD; j++) {
-	  bool start[LAST_DIM] = {false, false, false};
-	  bool end[LAST_DIM] = {false, false, false};
-	  for(int k = 0; k < MAX_COORD; k++) {
-
-	    if (_p[k][i][j] == true) {
-	      if (end[X] == false) {
-		start[X] = true;
-	      } else {
-		return false;
-	      }      
-	    } else {
-	      if (start[X] == true) {
-		end[X] = true;
-	      }
-	    }
-
-	    if (_p[i][k][j] == true) {
-	      if (end[Y] == false) {
-		start[Y] = true;
-	      } else {
-		return false;
-	      }      
-	    } else {
-	      if (start[Y] == true) {
-		end[Y] = true;
-	      }
-	    }
-
-	    if (_p[i][j][k] == true) {
-	      if (end[Z] == false) {
-		start[Z] = true;
-	      } else {
-		return false;
-	      }      
-	    } else {
-	      if (start[Z] == true) {
-		end[Z] = true;
-	      }
-	    }
-	  }	  
-	}
-      }
-
-      return true;*/
 
     }
 
@@ -542,108 +580,79 @@ namespace line_convex_multi_dim_v2 {
     
     for (vector<Cell>::iterator iter=candidates.begin(); iter != candidates.end(); ++iter) {
       if (p->is_neigh(*iter, _c) == false && p->is_contained(*iter) == false) {
-	u->push(*iter);
+	u->push_back(*iter);
       }
     }
   }
 
 
-
-
   void redelemeier_recursive(ConvexPolycube& p, 
 			     UntriedSet& untried, 
 			     unsigned int n,
-			     unsigned int n0, 
+                            unsigned int n0, 
 			     count_t &curr_id, 
 			     count_t low_id, 
 			     count_t hight_id,
-			     vector<count_t>* results) {
-    
-    static bool global_pruned = false;
-    static ConvexPolycube pruned_p(p);
-    bool local_pruned = false;
-	
+			     vector<count_t>* results) {   
+ 
     while(untried.empty() == false) {
       
       
-  
-      if(curr_id >= hight_id)
-	return;
       
-      Cell c = untried.top();
-      untried.pop();
+      if(curr_id >= hight_id) {
+	return;
+      }
+      
+      
+      list<Cell>::iterator min_iter = untried.begin();
+      list<Cell>::iterator iter;
+
+      for(iter = untried.begin(); iter != untried.end(); iter++) {
+	if (p.get_geo_dist(*iter) < p.get_geo_dist(*min_iter)) {
+	  min_iter = iter;
+	}
+      }
+
+      Cell c = *min_iter;
+      untried.erase(min_iter);
+      
+      // TODO: Artium DEBUG
+      static int x4 = 1;
+      if(p.size() == 4) {
+	cout << x4 << "/86" << endl;
+       x4++;
+      }
+      ////
 
 
       // add will fail if the new polycube is not convex
       if (p.add(c) == false) {
 	continue;
       }
-      
-      // TODO: Artium DEBUG
-      static int x4 = 1;
-      if(p.size() == 4) {
-	cout << x4 << "/86" << endl;
-	x4++;
-      }
-      ////
-
 
       // count only polyominoes that are in the search range
       if(p.size() >= n0 && curr_id >= low_id && curr_id < hight_id) {
-
-	// DEBUG TODO REMOVE if statement
-	if(p.debug_test_convexity()) {
-
-	  p.dump_to_file();
-	  (*results)[p.size()]++;
-
-	  if (global_pruned) {
-	    cout << "Ommited due to pruning: ";
-	    p.debug_print_p();
-	    cout << "Pruned by: ";
-	    pruned_p.debug_print_p();
-	    cout << "Last added: x=" << c[X] << " y=" << c[Y] << " z=" << c[Z] << endl;
-	  }
-
-
-	} else {
-	  
-	  if (!global_pruned) {
-	    global_pruned = true;
-	    local_pruned = true;
-	    pruned_p = p;
-	  }
-	  
-	  
-	}
+	p.dump_to_file();
+	(*results)[p.size()]++;
       }
-	
+      
       if(p.size() < n0 || (p.size() >= n0 && p.size() < n && curr_id >= low_id && curr_id < hight_id) ) {
 	UntriedSet untried_next = UntriedSet(untried);
-
+	
 	// add neighbours of c to the untried set
-	// will add only neghbours whcihc are not negibours of p
+	// will add only neghbours which are not negibours of p
 	add_new_neig_to_untried(c, &untried_next, &p); 
-
-
+		
 	redelemeier_recursive(p, untried_next, n, n0, curr_id, low_id, hight_id, results);
       }
-		
+      
       if(p.size() == n0) 
 	curr_id++;
       
-      if(local_pruned) {
-	local_pruned = false;
-	global_pruned = false;
-      }
-
       p.remove(c);
     }
   }
   
-
-  
-
 
 
   /**
