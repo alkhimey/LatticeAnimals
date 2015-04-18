@@ -453,19 +453,18 @@ void dump_cell_stack(CellStack& p, std::ofstream* dump_file) {
     return;
   }
 
+
   
-  vector<string> sorted_vertices;
-  for(CellStack::iterator iter = p.begin(); iter < p.end(); iter++) {
-    Cell c = *iter;
+  CellStack temp_p = p; // copy of p
+  sort(temp_p.begin(), temp_p.end());
+
+
+  for(CellStack::iterator iter = temp_p.begin(); iter < temp_p.end(); iter++) {
     stringstream strm;
-    strm << "(" << c.x << "," << c.y << "," << c.z << ") ";
-    string s = strm.str();
-    sorted_vertices.insert(upper_bound( sorted_vertices.begin(), sorted_vertices.end(), s ), s );
+    strm << "(" << iter->x << "," << iter->y << "," << iter->z << ") ";
+    (*dump_file) << strm.str();
   }
-      
-  for(vector<string>::iterator iter = sorted_vertices.begin(); iter < sorted_vertices.end(); iter++) { 
-    (*dump_file) << *iter;
-  }
+
   (*dump_file) << endl;
 }
 
