@@ -19,20 +19,21 @@ using namespace std;
 using namespace GetOpt;
 
 
-#define CLIENT_VERSION "1.5"
+#define CLIENT_VERSION "1.6"
 #define DEFAULT_HOST "melon"
 #define ALLOCATE_PAGE "allocate"
 #define REPORT_PAGE "report"
-#define DEFAULT_PORN_NO 8000
+#define DEFAULT_PORT_NO 8000
 #define DEFAULT_ALGO_ID 0
 
-#define NUMBER_OF_ALGORITHMS 4
+#define NUMBER_OF_ALGORITHMS 5
 
 pair< string, CountingAlgorithm > ALGORITHMS[NUMBER_OF_ALGORITHMS] = {
-  make_pair("redelemeier-recursive-3d", redelemeier_recursive_3d),
-  make_pair("redelemeier-3d-line-convex", redelemeier_3d_line_convex),
-  make_pair("redelemeier-3d-full-convex", redelemeier_3d_full_convex),
-  make_pair("line_convex_counter_3d", line_convex_multi_dim_v2::line_convex_counter_3d)
+  make_pair("trivial redelemeier 3d", redelemeier_recursive_3d),
+  make_pair("trivial redelemeier weak convex 3d", redelemeier_3d_line_convex),
+  make_pair("trivial redelemeier strong convex 3d", redelemeier_3d_full_convex),
+  make_pair("redelemeier with pruning weak convex 3d", redelemeier_with_pruning::line_convex_counter_3d),
+  make_pair("redelemeier with pruning strong convex 3d", redelemeier_with_pruning::full_convex_counter_3d)
 };
 
 /*
@@ -41,7 +42,7 @@ pair< string, CountingAlgorithm > ALGORITHMS[NUMBER_OF_ALGORITHMS] = {
  * This function will:
  * 1. Parse command line parameters.
  * 2. Get job from the server (optional).
- * 3. Run the algorithm on.
+ * 3. Run the chosen algorithm.
  * 4. Report results or print them on the screen.
  *
  */
@@ -156,14 +157,16 @@ int parseUll(const char* s, unsigned long long int* ull) {
 
 
 void usage(string app_name) {
+
+
   cout << "Version " << CLIENT_VERSION << endl;
-  cout << "Usage examples:" << endl;
-  cout << app_name << " -s localhost" << endl;
-  cout << app_name << " -s localhost -p 8080" << endl;
-  cout << app_name << " 8" << endl;
-  cout << app_name << " 8 -f [output_file_name]" << endl;
-  cout << app_name << " 8 --algo_id 1" << endl;
-  cout << app_name << " 10 8 154 1043" << endl;
+  cout << "Usages:" << endl;
+  cout << app_name << " -s <hostname>" << endl;
+  cout << app_name << " -s <hostname> -p <port_number>" << endl;
+  cout << app_name << " <n>" << endl;
+  cout << app_name << " <n> -f <output_file_name>" << endl;
+  cout << app_name << " <n> --algo_id <algo_id>" << endl;
+  cout << app_name << " <n> <split_n> <low_id> <high_id>" << endl;
   cout << app_name << "" << endl;
   cout << endl;
   cout << "Available algorithms are:" << endl;
@@ -189,7 +192,7 @@ void parseCmdParams(int argc, char* argv[], string *host, int *portno, unsigned 
     // TODO: It is possible to rearrange some stuff here.
     if(!ops.options_remain()) {
       *host = DEFAULT_HOST;
-      *portno = DEFAULT_PORN_NO;
+      *portno = DEFAULT_PORT_NO;
     } else if (ops >> OptionPresent('h', "help")) {
       usage(ops.app_name());
     } else if (ops >> OptionPresent('s', "server")) {
@@ -197,7 +200,7 @@ void parseCmdParams(int argc, char* argv[], string *host, int *portno, unsigned 
       if(ops >> OptionPresent('p', "port")) 
 	ops >> Option('p', "port", *portno);
       else
-	*portno = DEFAULT_PORN_NO;
+	*portno = DEFAULT_PORT_NO;
     } else if(ops >> OptionPresent('p', "port")) { 
       ops >> Option('p', "port", *portno);
       *host = DEFAULT_HOST;

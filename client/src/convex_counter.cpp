@@ -14,33 +14,33 @@
 
 #include <iostream>
 
+
 using namespace std;
 
 /**
  * Improved version of the line convex counting algorithm family.
  *
  */
-namespace line_convex_multi_dim_v2 {
+namespace redelemeier_with_pruning{
 
   enum Dim3d { X, Y, Z, LAST_DIM };
   
   /**
    * Maximum number of cells in 1D stick. Big enough to avoid out of range checks for any N we will use.
    */
-  enum { MAX_COORD = 30 }; // TODO: Reset to large number after debugging 
+  enum { MAX_COORD = 40 }; // THIS IMPLEMENTATION CAN COUNT UP TO N=19 !
   enum { ORIGIN_COORD = MAX_COORD / 2 };
 
   class Cell;
   class ConvexPolycube;
   class CompareCells;
-  class CompareCellsGeo;
+  
+  typedef list<Cell> UntriedSet;
 
   typedef unsigned long long count_t;
   typedef int coord_t;
   typedef Dim3d dim_t;
   
-  //typedef priority_queue<Cell, vector<Cell>, CompareCells> UntriedSet; 
-  typedef list<Cell> UntriedSet;
 
   class Cell {
   private:
@@ -111,22 +111,19 @@ namespace line_convex_multi_dim_v2 {
   } ;
   
 
-
   class ConvexPolycube {
   private:
        
-    
+    // Used for keeping track of connectivity of rows and slices
     bool _p[MAX_COORD][MAX_COORD][MAX_COORD];
     bool _not_empty[LAST_DIM][MAX_COORD][MAX_COORD]; // is row not empty 
+
+    bool _not_empty_2d_slice[LAST_DIM][MAX_COORD]; // is 2d slice empty
 
     
     unsigned int _size;
 
-    /// Geodesical distance
-    coord_t _geo_dist[MAX_COORD][MAX_COORD][MAX_COORD];
-
-    /// Is the distance matrix valid
-    bool    _geo_dist_valid;
+    bool _is_strong_convex;
 
 
     // Used for debugging
@@ -141,7 +138,7 @@ namespace line_convex_multi_dim_v2 {
     ofstream* _f;
     
   public:
-    ConvexPolycube(Cell origin, ofstream* dump_file) {
+    ConvexPolycube(Cell origin, ofstream* dump_file, bool is_strong_convex = false) {
       
       for (int ix = 0; ix < MAX_COORD; ix++) {
 	for (int iy = 0; iy < MAX_COORD; iy++){
@@ -152,14 +149,29 @@ namespace line_convex_multi_dim_v2 {
 	  _not_empty[X][ix][iy] = false;
 	  _not_empty[Y][ix][iy] = false;
 	  _not_empty[Z][ix][iy] = false;
+
 	}
+
+	_not_empty_2d_slice[X][ix] = false;
+	_not_empty_2d_slice[Y][ix] = false;
+	_not_empty_2d_slice[Z][ix] = false;
+		  
+
       }
+
+      _is_strong_convex = is_strong_convex;
 
       _p[origin[X]][origin[Y]][origin[Z]] = true;
 
       _not_empty[X][origin[Y]][origin[Z]] = true;
       _not_empty[Y][origin[X]][origin[Z]] = true;
       _not_empty[Z][origin[X]][origin[Y]] = true;
+
+      _not_empty_2d_slice[X][origin[X]] = true;
+      _not_empty_2d_slice[Y][origin[Y]] = true;
+      _not_empty_2d_slice[Z][origin[Z]] = true;
+
+      
 
       _size = 1;
 
@@ -170,8 +182,6 @@ namespace line_convex_multi_dim_v2 {
 
       _p_list.insert(origin);
 
-
-      _geo_dist_valid = false;
 
       _f = dump_file;
     }
@@ -193,18 +203,36 @@ namespace line_convex_multi_dim_v2 {
       assert(c[Z] >= 0);
 
 
+      bool connected_1d = 
+	(_p[c[X] + 1][c[Y]][c[Z]] ||
+	 _p[c[X] - 1][c[Y]][c[Z]] ||
+	 _not_empty[X][c[Y]][c[Z]] == false) &&
+	
+	(_p[c[X]][c[Y] + 1][c[Z]] ||
+	 _p[c[X]][c[Y] - 1][c[Z]] ||
+	 _not_empty[Y][c[X]][c[Z]] == false) &&
+	
+	(_p[c[X]][c[Y]][c[Z] + 1] ||
+	 _p[c[X]][c[Y]][c[Z] - 1] ||
+	 _not_empty[Z][c[X]][c[Y]] == false);
+      
+      bool connected_2d = 
+	(_p[c[X] + 1][c[Y]    ][c[Z]] || _p[c[X] - 1][c[Y]    ][c[Z]] ||
+	 _p[c[X]    ][c[Y] + 1][c[Z]] || _p[c[X]    ][c[Y] - 1][c[Z]] ||
+	 _not_empty_2d_slice[Z][c[Z]] == false) &&
+	
+	(_p[c[X] + 1][c[Y]][c[Z]    ] || _p[c[X] - 1][c[Y]][c[Z]    ] ||
+	 _p[c[X]    ][c[Y]][c[Z] + 1] || _p[c[X]    ][c[Y]][c[Z] - 1] ||
+	 _not_empty_2d_slice[Y][c[Y]] == false) &&
+	
+	(_p[c[X]    ][c[Y] + 1][c[Z]] || _p[c[X]    ][c[Y] - 1][c[Z]] ||
+	 _p[c[X]    ][c[Y]][c[Z] + 1] || _p[c[X]    ][c[Y]][c[Z] - 1] ||
+	 _not_empty_2d_slice[X][c[X]] == false);
+      
+
       /*if(debug_test_convexity(c)) {*/
-      if ((_p[c[X] + 1][c[Y]][c[Z]] ||
-           _p[c[X] - 1][c[Y]][c[Z]] ||
-      	   _not_empty[X][c[Y]][c[Z]] == false) &&
-	  
-      	  (_p[c[X]][c[Y] + 1][c[Z]] ||
-      	   _p[c[X]][c[Y] - 1][c[Z]] ||
-      	   _not_empty[Y][c[X]][c[Z]] == false) &&
-	  
-      	  (_p[c[X]][c[Y]][c[Z] + 1] ||
-      	   _p[c[X]][c[Y]][c[Z] - 1] ||
-      	   _not_empty[Z][c[X]][c[Y]] == false)) {
+      if ( connected_1d && 
+	  (connected_2d || _is_strong_convex == false)) {
       
 	_p[c[X]][c[Y]][c[Z]] = true;
 	
@@ -212,11 +240,13 @@ namespace line_convex_multi_dim_v2 {
 	_not_empty[Y][c[X]][c[Z]] = true;
 	_not_empty[Z][c[X]][c[Y]] = true;
 
+	_not_empty_2d_slice[X][c[X]] = true;
+	_not_empty_2d_slice[Y][c[Y]] = true;
+	_not_empty_2d_slice[Z][c[Z]] = true;
+
 	_size++;
 
 	_p_list.insert(c);
-
-	_geo_dist_valid = false;
 
 	for(int d = X; d < LAST_DIM; d++) {
 	  _min[d] = min(_min[d], c[d]);
@@ -249,14 +279,34 @@ namespace line_convex_multi_dim_v2 {
       if (_p[c[X]][c[Y]][c[Z] + 1] == false &&  _p[c[X]][c[Y]][c[Z] - 1] == false) {
 	_not_empty[Z][c[X]][c[Y]] = false;
       }
+
+
+      if (_p[c[X] + 1][c[Y]    ][c[Z]] == false && _p[c[X] - 1][c[Y]    ][c[Z]] == false &&
+	  _p[c[X]    ][c[Y] + 1][c[Z]] == false && _p[c[X]    ][c[Y] - 1][c[Z]] == false) {
+	_not_empty_2d_slice[Z][c[Z]] = false;
+      }
+
+      if (_p[c[X] + 1][c[Y]][c[Z]    ] == false && _p[c[X] - 1][c[Y]][c[Z]    ] == false &&
+	  _p[c[X]    ][c[Y]][c[Z] + 1] == false && _p[c[X]    ][c[Y]][c[Z] - 1] == false) {
+	_not_empty_2d_slice[Y][c[Y]] = false;
+      }
+
+      if (_p[c[X]    ][c[Y] + 1][c[Z]] == false && _p[c[X]    ][c[Y] - 1][c[Z]] == false &&
+	  _p[c[X]    ][c[Y]][c[Z] + 1] == false && _p[c[X]    ][c[Y]][c[Z] - 1] == false) {
+	_not_empty_2d_slice[X][c[X]] = false;
+      }
+
+
+    
       
       _size--;
       _p[c[X]][c[Y]][c[Z]] = false;
       
       _p_list.erase(c);
       
-      _geo_dist_valid = false;
 
+
+      /*
       for(int d = X; d < LAST_DIM; d++) {
 	// Update _min
 	if (c[d] == _min[d]) {
@@ -291,7 +341,7 @@ namespace line_convex_multi_dim_v2 {
 	    _max[d] --;
 	  }
 	}
-      }  
+	} */ 
     }
   
 
@@ -329,84 +379,7 @@ namespace line_convex_multi_dim_v2 {
 
 
     /**
-     * Run BFS algorthim starting at the origin
-     *
-     */
-    void run_bfs() {
-      
-      for (int ix = 0; ix < MAX_COORD; ix++) {
-	for (int iy = 0; iy < MAX_COORD; iy++){
-	  for (int iz = 0; iz < MAX_COORD; iz++){
-	    _geo_dist[ix][iy][iz] = -1;
-	  }
-	}
-      }
-
-      queue<Cell> q;
-
-      q.push(Cell(ORIGIN_COORD, ORIGIN_COORD, ORIGIN_COORD));
-
-      _geo_dist[ORIGIN_COORD][ORIGIN_COORD][ORIGIN_COORD] = 0;
-
-      while (q.empty() != false) {
-	vector<Cell> candidates;
-	Cell c = q.front();
-	q.pop();
-
-	candidates.push_back(Cell(c[X] + 1, c[Y],     c[Z]));
-	candidates.push_back(Cell(c[X],     c[Y] + 1, c[Z]));     
-	candidates.push_back(Cell(c[X],     c[Y],     c[Z] + 1));
-	candidates.push_back(Cell(c[X] - 1, c[Y],     c[Z]));
-	candidates.push_back(Cell(c[X],     c[Y] - 1, c[Z]));     
-	candidates.push_back(Cell(c[X],     c[Y],     c[Z] - 1));
-       
-	for (vector<Cell>::iterator iter=candidates.begin(); iter != candidates.end(); ++iter) {
-	  Cell c2 = *iter;
-	  if (_p[c2[X]][c2[Y]][c2[Z]] == true && _geo_dist[c2[X]][c2[Y]][c2[Z]] == -1) {
-	    q.push(c2);
-	    _geo_dist[c2[X]][c2[Y]][c2[Z]] = _geo_dist[c[X]][c[Y]][c[Z]] + 1;
-	  }
-	}
-      }
-
-      _geo_dist_valid = true; // untill next add or remove operation
-    }
-
-    /**
-     * Get geodesic distance of cell c which is a neighbour of the polycube.
-     */
-    coord_t get_geo_dist(Cell c) {
-
-      vector<Cell> candidates;
-
-      if(_geo_dist_valid == false) {
-	run_bfs();
-      }
-
-      candidates.push_back(Cell(c[X] + 1, c[Y],     c[Z]));
-      candidates.push_back(Cell(c[X],     c[Y] + 1, c[Z]));     
-      candidates.push_back(Cell(c[X],     c[Y],     c[Z] + 1));
-      candidates.push_back(Cell(c[X] - 1, c[Y],     c[Z]));
-      candidates.push_back(Cell(c[X],     c[Y] - 1, c[Z]));     
-      candidates.push_back(Cell(c[X],     c[Y],     c[Z] - 1));
-      
-      coord_t min = MAX_COORD * MAX_COORD * MAX_COORD + 1;
-
-      for (vector<Cell>::iterator iter=candidates.begin(); iter != candidates.end(); ++iter) {
-	Cell c2 = *iter;
-	coord_t dist = _geo_dist[c2[X]][c2[Y]][c2[Z]];
-
-	if (dist != -1 && dist < min) {
-	  min = dist;
-	}
-      }
-      assert(min < MAX_COORD * MAX_COORD * MAX_COORD + 1);
-      return min;
-    }
-
-
-    /**
-     * Write the polycube int the file whose handle was provided during construction
+     * Write the polycube into the file whose handle was provided during construction
      */
     void dump_to_file() const {
       if (_f->is_open() == false) {
@@ -594,40 +567,36 @@ namespace line_convex_multi_dim_v2 {
 			     count_t low_id, 
 			     count_t hight_id,
 			     vector<count_t>* results) {   
- 
-    while(untried.empty() == false) {
-      
-      
+    
+    list<Cell>::iterator iter = untried.begin();
+
+    while(iter != untried.end()) {      
       
       if(curr_id >= hight_id) {
 	return;
       }
-      
-      
-      list<Cell>::iterator min_iter = untried.begin();
-      list<Cell>::iterator iter;
+          
+      Cell c = *iter;
 
-      for(iter = untried.begin(); iter != untried.end(); iter++) {
-	if (p.get_geo_dist(*iter) < p.get_geo_dist(*min_iter)) {
-	  min_iter = iter;
-	}
+      // If the polycube 'p' with addition of cell 'c' becomes non convex, add will not add cell 'c' and return false.
+      // The cell will not be removed from the untried list allowing any convex polycubes that are perfixed with
+      // 'p' and contain 'c' to be reached through a different path. 
+      if (p.add(c) == true) {
+
+	iter = untried.erase(iter);
+
+      } else {
+
+	iter++;
+	continue;
+
       }
 
-      Cell c = *min_iter;
-      untried.erase(min_iter);
-      
-      // TODO: Artium DEBUG
+      // Print progress
       static int x4 = 1;
       if(p.size() == 4) {
-	cout << x4 << "/86" << endl;
+	cout << "Progress... "  << x4 << "/86" << endl;
        x4++;
-      }
-      ////
-
-
-      // add will fail if the new polycube is not convex
-      if (p.add(c) == false) {
-	continue;
       }
 
       // count only polyominoes that are in the search range
@@ -687,5 +656,40 @@ namespace line_convex_multi_dim_v2 {
 			  results); 
     p.remove(origin);
   }
+
+
+  void full_convex_counter_3d(unsigned int n,
+			      unsigned int n0,
+			      count_t low_id,
+			      count_t hight_id,
+			      vector<count_t>* results, 
+			      std::ofstream* dump_file) {
+
+    Cell origin(ORIGIN_COORD, ORIGIN_COORD, ORIGIN_COORD);
+    
+    ConvexPolycube p(origin, dump_file, true);
+    
+    
+    UntriedSet untried;
+    add_new_neig_to_untried(origin, &untried, &p); 
+    
+    count_t curr_id = 0;
+    
+    p.dump_to_file(); // dump (0,0,0)
+    
+    redelemeier_recursive(p, 
+			  untried, 
+			  n,
+			  n0, 
+			  curr_id, 
+			  low_id, 
+			  hight_id,
+			  results); 
+    p.remove(origin);
+
+
+  }
+
+
 
 };

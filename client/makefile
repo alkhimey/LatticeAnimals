@@ -1,74 +1,80 @@
-LINUX_CXX=g++
-WINDOWS_CXX=i586-mingw32msvc-g++
 
-COMMON_FLAGS=-Wall
-WINDOWS_AFTER_FLAGS=-lws2_32 # linkage only
-DEBUG_FLAGS=-g
-RELEASE_FLAGS=-O3 -march=native -DNDEBUG
-
-
-# Use ':=' instead of '=' to avoid multiple evaluation of NOW.
-NOW := $(shell date)
-
+SRC_DIR=src
+SRCS=$(wildcard $(SRC_DIR)/*.cpp)
+UNIT_TESTS_DIR=unit_tests
+UNIT_TESTS_SRCS=$(wildcard $(UNIT_TESTS_DIR)/*.cpp)
 OBJ_DIR=obj
 BIN_DIR=bin
 
-RELEASE_DIR=release
-DEBUG_DIR=debug
+#linux_debug: CXX=g++
+#linux_debug: CC_FLAGS=-c -Wall -g
+#linux_debug: LD_FLAGS=
+#linux_debug: SUFFIX=linux_debug
+#linux_debug: EXE=$(BIN_DIR)/run_$(SUFFIX)
+#linux_debug: OBJS=$(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%_$(SUFFIX).o)
 
-LINUX_SUFFIX=linux
-WINDOWS_SUFFIX=windows
-
-EXE_PREFIX=client
-
-HEADERS=$(wildcard *.h)
-SRCS=$(wildcard *.cpp)
- 
+#linux_debug: dirs $(EXE)
 
 
-.PHONY: clean all
 
-all: make_directories link_linux_release link_windows_release link_linux_debug link_windows_debug
+CXX=g++
+CC_FLAGS=-c -Wall -g
+LD_FLAGS=
+SUFFIX=linux_debug
+
+EXE=$(BIN_DIR)/run_$(SUFFIX)
+UNIT_TESTS_EXE=$(BIN_DIR)/unit_tests_$(SUFFIX)
+OBJS=$(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%_$(SUFFIX).o)
+
+OBJS_WITHOUT_MAIN=$(filter-out $(OBJ_DIR)/main_$(SUFFIX).o, $(OBJS))
+UNIT_TESTS_OBJS=$(UNIT_TESTS_SRCS:$(UNIT_TESTS_DIR)/%.cpp=$(OBJ_DIR)/$(UNIT_TESTS_DIR)/%_$(SUFFIX).o)
 
 
-make_directories:
+.PHONY: all clean #linux_debug
+
+
+
+all: dirs $(EXE) $(UNIT_TESTS_EXE)
+
+
+# Link only if dependency changed
+#
+$(EXE): $(OBJS)
+	$(CXX) $(LD_FLAGS) -o $@ $^
+
+
+# Similarly, link unit tests (exclude main from link)
+#
+$(UNIT_TESTS_EXE): $(OBJS_WITHOUT_MAIN) $(UNIT_TESTS_OBJS)
+	$(CXX) $(LD_FLAGS) -o $@ $^
+
+
+
+# Create directories. No error if directory already exists
+#
+dirs:
 	mkdir -p $(OBJ_DIR)
 	mkdir -p $(BIN_DIR)
-	mkdir -p $(OBJ_DIR)/$(RELEASE_DIR)
-	mkdir -p $(BIN_DIR)/$(RELEASE_DIR)
-	mkdir -p $(OBJ_DIR)/$(DEBUG_DIR)
-	mkdir -p $(BIN_DIR)/$(DEBUG_DIR)
+	mkdir -p $(OBJ_DIR)/$(UNIT_TESTS_DIR)
 
-link_linux_release: $(addprefix $(OBJ_DIR)/$(RELEASE_DIR)/, $(SRCS:.cpp=_$(LINUX_SUFFIX).o)) 
-	$(LINUX_CXX)   $(RELEASE_FLAGS) $(COMMON_FLAGS) $^ $(AFTER_FLAGS) -o $(BIN_DIR)/$(RELEASE_DIR)/$(EXE_PREFIX)_$(LINUX_SUFFIX)
+# Compile all sources and generate dependency lists
+#
+$(OBJ_DIR)/%_$(SUFFIX).o: $(SRC_DIR)/%.cpp
+	g++ -c -MMD -MP -o $@ $<
 
-link_windows_release: $(addprefix $(OBJ_DIR)/$(RELEASE_DIR)/, $(SRCS:.cpp=_$(WINDOWS_SUFFIX).o))
-	$(WINDOWS_CXX) $(RELEASE_FLAGS) $(COMMON_FLAGS) $^ $(WINDOWS_AFTER_FLAGS) -o $(BIN_DIR)/$(RELEASE_DIR)/$(EXE_PREFIX)_$(WINDOWS_SUFFIX)
-
-link_linux_debug: $(addprefix $(OBJ_DIR)/$(DEBUG_DIR)/, $(SRCS:.cpp=_$(LINUX_SUFFIX).o))
-	$(LINUX_CXX)    $(DEBUG_FLAGS) $(COMMON_FLAGS) $^ -o $(BIN_DIR)/$(DEBUG_DIR)/$(EXE_PREFIX)_$(LINUX_SUFFIX)
-
-link_windows_debug: $(addprefix $(OBJ_DIR)/$(DEBUG_DIR)/, $(SRCS:.cpp=_$(WINDOWS_SUFFIX).o))
-	$(WINDOWS_CXX)  $(DEBUG_FLAGS) $(COMMON_FLAGS) $^ $(WINDOWS_AFTER_FLAGS) -o $(BIN_DIR)/$(DEBUG_DIR)/$(EXE_PREFIX)_$(WINDOWS_SUFFIX)
+# Compile all unit tests and generate dependency lists
+#
+$(OBJ_DIR)/$(UNIT_TESTS_DIR)/%_$(SUFFIX).o: $(UNIT_TESTS_DIR)/%.cpp
+	g++ -c -MMD -MP -o $@ $<
 
 
-
-$(OBJ_DIR)/$(RELEASE_DIR)/%_$(LINUX_SUFFIX).o: %.cpp %.h
-	$(LINUX_CXX)   -c $(RELEASE_FLAGS) $(COMMON_FLAGS) -o $@ $<
-
-$(OBJ_DIR)/$(RELEASE_DIR)/%_$(WINDOWS_SUFFIX).o: %.cpp %.h
-	$(WINDOWS_CXX) -c $(RELEASE_FLAGS) $(COMMON_FLAGS) -o $@ $<
-
-$(OBJ_DIR)/$(DEBUG_DIR)/%_$(LINUX_SUFFIX).o: %.cpp %.h
-	$(LINUX_CXX)   -c $(DEBUG_FLAGS) $(COMMON_FLAGS) -o $@ $<
-
-$(OBJ_DIR)/$(DEBUG_DIR)/%_$(WINDOWS_SUFFIX).o: %.cpp %.h
-	$(WINDOWS_CXX) -c $(DEBUG_FLAGS) $(COMMON_FLAGS) -o $@ $<
+# Include previously generated dependency lists.
+# First time build will build all sources anyway.
+#
+-include $(OBJ_DIR)/*.d
 
 
-
-
-
-
+# Clean
+#
 clean:
-	rm -rf $(OBJ_DIR) $(BIN_DIR)
+	rm -rf obj bin
