@@ -4,12 +4,23 @@
 #include "lattice_animal.h"
 
 
+index_t pow_nd(coord_t n, dim_t d) {
+  assert(n > 0);
+  assert(d > 0);
+  index_t res = n;
+  for(dim_t i = 0; i < d-1; i++) {
+    res *= n;
+  }
 
-index_t LatticeAnimal::get_index(const std::vector<coord_t>& c) 
+  return res;
+}
+
+
+index_t LatticeAnimal::get_index(const std::vector<coord_t>& c) const
 {
   index_t idx = 0;
   for(dim_t d = 0; d < c.size(); d++) {
-    idx += (d + 1) * c[d];
+    idx += (d + 1) * (c[d] + (_n - 1));
   }
 
   return idx;
@@ -18,7 +29,7 @@ index_t LatticeAnimal::get_index(const std::vector<coord_t>& c)
 
 
 bool LatticeAnimal::inner_add(const std::vector<coord_t>& c, index_t idx) {
-  return true; // this class is for the general lattice animals (fixed, no holes).
+  return true; 
 }
 
 
@@ -26,6 +37,7 @@ bool LatticeAnimal::inner_add(const std::vector<coord_t>& c, index_t idx) {
 bool LatticeAnimal::add(const std::vector<coord_t>& c)
 {
   assert(c.size() == _d);
+  assert(_stack.size() <= (std::vector< std::pair< index_t, std::vector<coord_t> > >::size_type)_n);
 
   index_t idx = get_index(c);
 
@@ -33,7 +45,7 @@ bool LatticeAnimal::add(const std::vector<coord_t>& c)
 
   if (inner_add(c, idx) == true) {
 
-    _cell_stack.push_back(c);
+    _stack.push_back(make_pair(idx, c));
     _lattice[idx] = true;
 
     return true;
@@ -48,10 +60,10 @@ bool LatticeAnimal::add(const std::vector<coord_t>& c)
 
 void LatticeAnimal::pop() 
 {
-  assert(_cell_stack.size() > 0);
+  assert(_stack.size() > 0);
 
-  std::vector<coord_t> c = _cell_stack.back();
-  _cell_stack.pop_back();
+  _lattice[_stack.back().first] = false;
+  _stack.pop_back();
 
 }
 
@@ -61,13 +73,12 @@ bool LatticeAnimal::is_contained(const std::vector<coord_t>& c) const
 }
 
 
-bool LatticeAnimal::is_neigh(std::vector<coord_t>& c) const 
+/**
+ *  TODO: This procedure can be optimised using smarter index calculation.
+ */
+bool LatticeAnimal::is_neigh(std::vector<coord_t>& c) const
 {
-
-  // TODO: This can be optimised (index calculation)
-  for(dim_t d = 0; d < c.size(); d++) {
-
-    
+  for(dim_t d = 0; d < c.size(); d++) { 
     c[d] += 1;
     if (_lattice[ get_index(c) ]) {
       c[d] -= 1;

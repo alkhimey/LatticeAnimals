@@ -2,6 +2,8 @@
 #define LATTICE_ANIMAL_H_
 
 #include <vector>
+#include <utility>
+#include <math.h>
 
 #include "basic_types.h"
 
@@ -9,6 +11,12 @@
  * Index for the flat array.
  */
 typedef uint32_t index_t;
+
+
+/**
+ * Power utility function. Calculates n**d.
+ */
+index_t pow_nd(coord_t n, dim_t d);
 
 
 /**
@@ -20,9 +28,13 @@ private:
   dim_t _d;
   coord_t _n;
   
-  std::vector<bool>                _lattice;          // size of n**d
-  //  std::vector<bool>                _not_empty_column; // size of d*n**(d-1) 
-  std::vector< std::vector<coord_t> > _cell_stack;
+  std::vector<bool>                _lattice;          /// size of the lattice is n**d
+
+  std::vector< std::pair< index_t > _stack;
+
+  
+  std::vector< vector< coord_t > > _index_to_coord;   /// "index to coordinates" constant translation table
+
 
   /**
    * Inner add function. It should be hidden by specialised lattice animal classes that 
@@ -36,14 +48,6 @@ private:
   bool inner_add(const std::vector<coord_t>& c, index_t idx);
 
   
-public:
-  
-  
-  LatticeAnimal(dim_t d, coord_t n) {
-    // TODO: Constructor
-    
-  }
-
   /**
    * A d-dimensional lattice is stored in a flat array. This
    * function calculates the index of cell c in this array.
@@ -52,8 +56,22 @@ public:
    * @param  c Vector containing d coordinates, ordered according to the dimensions.
    * @return   The calculated index
    */
-  static index_t inline get_index(const std::vector<coord_t>& c);
+  index_t inline get_index(const std::vector<coord_t>& c) const;
+
+
+public:
   
+  /** 
+   * Class constructor
+   *
+   * @param  d Dimension of the lattice 
+   * @param  n Upper limit to the size of the animal (maximum number of cells)
+   */
+  LatticeAnimal(dim_t d, coord_t n) {
+    _d = d;
+    _n = n;
+    _lattice = std::vector<bool>( pow_nd( 2 * (_n - 1) + 2, _d ), false );
+  }  
 
 
   /**
@@ -80,7 +98,7 @@ public:
    * @param  c Vector containing d coordinates, ordered according to the dimensions.
    * @return   True if c is part of this lattice aminal.
    */
-  inline bool is_contained(const std::vector<coord_t>& c) const;
+  bool is_contained(const std::vector<coord_t>& c) const;
 
 
   /**
@@ -89,8 +107,9 @@ public:
    * @param  c Vector containing d coordinates, ordered according to the dimensions.  
    * @return   True if c is adjacent to some cell of this lattice animal
    */
-  inline bool is_neigh(std::vector<coord_t>& c) const;
+  bool is_neigh(std::vector<coord_t>& c) const;
 };
+
 
 
 #endif

@@ -18,7 +18,7 @@ BIN_DIR=bin
 
 
 CXX=g++
-CC_FLAGS=-c -Wall -g
+CC_FLAGS=-c -MMD -MP -Wall -std=c++0x -g
 LD_FLAGS=
 SUFFIX=linux_debug
 
@@ -60,12 +60,12 @@ dirs:
 # Compile all sources and generate dependency lists
 #
 $(OBJ_DIR)/%_$(SUFFIX).o: $(SRC_DIR)/%.cpp
-	g++ -c -MMD -MP -o $@ $<
+	g++ $(CC_FLAGS) -o $@ $<
 
 # Compile all unit tests and generate dependency lists
 #
 $(OBJ_DIR)/$(UNIT_TESTS_DIR)/%_$(SUFFIX).o: $(UNIT_TESTS_DIR)/%.cpp
-	g++ -c -MMD -MP -o $@ $<
+	g++ $(CC_FLAGS) -o $@ $<
 
 
 # Include previously generated dependency lists.
