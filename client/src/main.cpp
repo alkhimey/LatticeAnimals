@@ -26,14 +26,20 @@ using namespace GetOpt;
 #define DEFAULT_PORT_NO 8000
 #define DEFAULT_ALGO_ID 0
 
-#define NUMBER_OF_ALGORITHMS 5
 
-pair< string, CountingAlgorithm > ALGORITHMS[NUMBER_OF_ALGORITHMS] = {
-  make_pair("trivial redelemeier 3d", redelemeier_recursive_3d),
-  make_pair("trivial redelemeier weak convex 3d", redelemeier_3d_line_convex),
-  make_pair("trivial redelemeier strong convex 3d", redelemeier_3d_full_convex),
-  make_pair("redelemeier with pruning weak convex 3d", redelemeier_with_pruning::line_convex_counter_3d),
-  make_pair("redelemeier with pruning strong convex 3d", redelemeier_with_pruning::full_convex_counter_3d)
+
+
+vector< pair< string, CountingAlgorithm > > ALGORITHMS = {
+  make_pair("fixed 2d", redelemeier_main<LatticeAnimal, 2>),
+  make_pair("fixed 3d", redelemeier_main<LatticeAnimal, 3>),
+  make_pair("fixed 4d", redelemeier_main<LatticeAnimal, 4>),
+
+  make_pair("trivial redelemeier 3d (obsolete)", redelemeier_recursive_3d),
+  make_pair("trivial redelemeier weak convex 3d  (obsolete)", redelemeier_3d_line_convex),
+  make_pair("trivial redelemeier strong convex 3d (obsolete)", redelemeier_3d_full_convex),
+  
+  //make_pair("redelemeier with pruning weak convex 3d (obsolete)", redelemeier_with_pruning::line_convex_counter_3d),
+  //make_pair("redelemeier with pruning strong convex 3d (obsolete)", redelemeier_with_pruning::full_convex_counter_3d)
 };
 
 /*
@@ -68,7 +74,7 @@ int main(int argc, char* argv[]) {
       if(getJobFromServer(host, portno, &secret, &algo_id, &n, &n0, &lowId, &hightId) == false)
 	continue;
     
-    if(algo_id >= NUMBER_OF_ALGORITHMS) {
+    if(algo_id >= (int)ALGORITHMS.size()) {
       cout << "ERROR Client does not support alogrithm " << algo_id << endl;
       exit(0);
     }
@@ -170,7 +176,7 @@ void usage(string app_name) {
   cout << app_name << "" << endl;
   cout << endl;
   cout << "Available algorithms are:" << endl;
-  for(int i = 0; i < NUMBER_OF_ALGORITHMS;i++){
+  for(unsigned int i = 0; i < ALGORITHMS.size(); i++){
     cout << i << "\t" << ALGORITHMS[i].first;
     if( i == DEFAULT_ALGO_ID)
       cout << " (default)"; 
@@ -213,7 +219,7 @@ void parseCmdParams(int argc, char* argv[], string *host, int *portno, unsigned 
 
       if(ops >> OptionPresent("algo_id")) {
 	ops >> Option("algo_id", *algo_id);
-	if(*algo_id < 0 || *algo_id >= NUMBER_OF_ALGORITHMS)
+	if(*algo_id < 0 || *algo_id >= (int)ALGORITHMS.size())
 	  throw GetOpt::GetOptEx();
 
       } else {

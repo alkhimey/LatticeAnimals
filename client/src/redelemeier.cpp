@@ -13,7 +13,7 @@
 using namespace std;
 
 enum Axis {
-	X,Y,Z
+  X,Y,Z,LAST_AXIS
 };
 
 class Cell3; // Forward definition
@@ -108,8 +108,40 @@ void dump_cell_stack(CellStack& p, std::ofstream* dump_file);
 
 CellSet Cell3::getNeigh() {
 	CellSet s;
-	Cell3 c(x,y,z);
+	//Cell3 c(x,y,z);
 
+	 for(int dim = 0; dim < LAST_AXIS; dim++) {
+
+	   // -1, +1
+	   for (int offset = -1; offset <= 1; offset+=2) {
+	     Cell3 c(x,y,z);
+	     
+	     // Notice that cells at the edge have neighbours beyond the edge. This is ok.
+	     if (dim == 0)
+	       c.x += offset;
+	     else if (dim == 1)
+	       c.y += offset;
+	     else
+	       c.z += offset;
+
+	     if (c.x > 0) {
+	       s.insert(c);
+	     } else if (c.x == 0) {
+	       if (c.y > 0) {
+		 s.insert(c);
+	       } else if (c.y == 0) {
+		 if (c.z >= 0) {
+		   s.insert(c);
+		 } 
+	       }
+	     }
+	 
+	   }
+	 }
+
+
+
+	/**
 	c.x++; s.insert(c);
 	c.x--; 
 	if(!(z==0 && ((x==0 && y >= 0) || (x==1 && y < 0)))) {
@@ -129,6 +161,7 @@ CellSet Cell3::getNeigh() {
 	if(z > 1 || (z == 1 && x>=0 && y>=0) || (z == 1 && x>=1 && y < 0)) {
 		c.z--;	s.insert(c);
 	}
+	*/
 
 	return s;
 }
@@ -470,8 +503,8 @@ void dump_cell_stack(CellStack& p, std::ofstream* dump_file) {
 
 
 
-void redelemeier_recursive_3d(unsigned int n,
-			      unsigned int n0,
+void redelemeier_recursive_3d( coord_t n,
+			       coord_t n0,
 			      count_t lowId,
 			      count_t hightId,
 			      vector<count_t>* results,
@@ -484,20 +517,19 @@ void redelemeier_recursive_3d(unsigned int n,
 }
 
 
-void redelemeier_3d_line_convex(unsigned int n,
-				unsigned int n0,
+void redelemeier_3d_line_convex( coord_t n,
+				 coord_t n0,
 				count_t lowId,
 				count_t hightId,
 				vector<count_t>* results, 
 				std::ofstream* dump_file) {
   runRedelemeier(n, n0, lowId, hightId, predConvex1_3d, results, dump_file);
-  cout << endl; // TODO:ARTIUM DEBUG
 
 
 }
 
-void redelemeier_3d_full_convex(unsigned int n,
-				unsigned int n0,
+void redelemeier_3d_full_convex( coord_t n,
+				 coord_t n0,
 				count_t lowId,
 				count_t hightId,
 				vector<count_t>* results,

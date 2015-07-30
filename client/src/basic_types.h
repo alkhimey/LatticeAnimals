@@ -10,5 +10,7 @@ typedef int16_t coord_t;
 typedef uint16_t dim_t;
 
 
+typedef uint32_t index_t; /// Index of the flat array
+
 
 #endif

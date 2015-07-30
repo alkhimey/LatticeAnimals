@@ -521,9 +521,6 @@ namespace redelemeier_with_pruning{
 
   };
 
-  
-
-
   /**
    * Will add neighbours of the cell to the untried set u, which are not neighbours of
    * the polycube p or part of it. 
@@ -531,6 +528,38 @@ namespace redelemeier_with_pruning{
    */
   void add_new_neig_to_untried(Cell& _c, UntriedSet* u, ConvexPolycube* p) {
     vector<Cell> candidates;
+
+
+    for(int dim = 0; dim < LAST_DIM; dim++) {
+
+      // -1, +1
+      for (int offset = -1; offset <= 1; offset+=2) {
+	Cell c2 = _c;
+
+
+	// Notice that cells at the edge have neighbours beyond the edge. This is ok.
+	c2[dim] += offset;
+    
+	if (c2[X] > 0) {
+	  candidates.push_back(c2);
+	} else if (c2[X] == 0) {
+	  if (c2[Y] > 0) {
+	    candidates.push_back(c2);
+	  } else if (c2[Y] == 0) {
+	    if (c2[Z] >= 0) {
+	      candidates.push_back(c2);
+	    } 
+	  }
+	}
+
+
+      }
+    }
+
+
+
+    /* 26/07/15 experimenting - comparing with new version
+
 
     candidates.push_back(Cell(_c[X] + 1, _c[Y],     _c[Z]));
     candidates.push_back(Cell(_c[X],     _c[Y] + 1, _c[Z]));     
@@ -548,7 +577,7 @@ namespace redelemeier_with_pruning{
        (_c[Z] == ORIGIN_COORD + 1 && _c[X] >= ORIGIN_COORD &&  _c[Y] >= ORIGIN_COORD) || 
        (_c[Z] == ORIGIN_COORD + 1 && _c[X] >= ORIGIN_COORD + 1 && _c[Y] < ORIGIN_COORD)) {
       candidates.push_back(Cell(_c[X],     _c[Y],     _c[Z] - 1));
-    }  
+      } */ 
     
     
     for (vector<Cell>::iterator iter=candidates.begin(); iter != candidates.end(); ++iter) {
@@ -627,8 +656,8 @@ namespace redelemeier_with_pruning{
   /**
    * Algorithm entry point
    */
-  void line_convex_counter_3d(unsigned int n,
-			      unsigned int n0,
+  void line_convex_counter_3d(coord_t n,
+			      coord_t n0,
 			      count_t low_id,
 			      count_t hight_id,
 			      vector<count_t>* results,
@@ -658,8 +687,8 @@ namespace redelemeier_with_pruning{
   }
 
 
-  void full_convex_counter_3d(unsigned int n,
-			      unsigned int n0,
+  void full_convex_counter_3d(coord_t n,
+			      coord_t n0,
 			      count_t low_id,
 			      count_t hight_id,
 			      vector<count_t>* results, 

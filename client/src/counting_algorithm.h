@@ -2,68 +2,57 @@
 #define _COUNTING_ALGORITHM_H_
 
 #include <vector>
+#include <list>
 #include <fstream>
 #include "basic_types.h"
-
+#include "lattice_animal.h"
 
 /* Prototype for a counting algorthim entry point 
  * 
  * @param n		The maximum size of the lattice animal to count
  * @param n0		
  * @param low_id	
- * @param hight_id	
+ * @param high_id	
  * @param results 	The results of the count stored by size. Relevant only for sizes between n0 and n.
  * @param dump_file     Pointer to the dump stream. The stream should be already open for writing. If stream is
  *                      open, the algortihm should dump all the polycubes that it has counted.
  */ 
-typedef void (*CountingAlgorithm)(unsigned int n,
-				  unsigned int n0,
-				  count_t lowId,
-				  count_t hightId,
-				  std::vector<count_t>* results,
-				  std::ofstream* dump_file);
+typedef void (*CountingAlgorithm) (coord_t n,
+				   // dim_t d,
+				   coord_t n0,
+				   count_t low_id,
+				   count_t  high_id,
+				   std::vector<count_t>* results,
+				   std::ofstream* dump_file);
 
 
-
-typedef void (*CountingAlgorithmXXX)(unsigned int n,
-				     unsigned int d,
-				     unsigned int n0,
-				     count_t lowId,
-				     count_t  hightId,
-				     std::vector<count_t>* results,
-				     std::ofstream* dump_file);
-
-
-
-template <class A>
+template <class A, dim_t D>
 void redelemeier_main (coord_t n,
-		       dim_t d,
+		       //dim_t d,
 		       coord_t n0,
-		       count_t lowId,
-		       count_t  hightId,
+		       count_t low_id,
+		       count_t  high_id,
 		       std::vector<count_t>* results,
 		       std::ofstream* dump_file)
 {
-  A a(d,n);
 
-  std::vector<coord_t> origin;
-  for (int i = 0; i < d; i++) {
-    origin.push_back(0);
-  }
-
-  a.add(origin);
+  A a(D,n);
+  a.add_origin();
     
   count_t curr_id = 0;
-  
-
+  std::list< index_t > untried = a.get_new_untried();
+  (*results)[1] = 1;
 
   redelemeier_recursive(a,
-			n0, 
-			curr_id, 
+			untried,
+			n0,
 			low_id, 
-			hight_id,
-			results); 
-  p.remove(origin);
+			high_id,
+			curr_id,
+			results,
+			dump_file); 
+
+  a.pop();
 }
 
 
@@ -72,30 +61,33 @@ void redelemeier_main (coord_t n,
 
 template <class A>
 count_t redelemeier_recursive(A a,
-			      list< vector<coord_t> > untried
+			      std::list< index_t > &untried,
 			      coord_t n0,
-			      count_t lowId,
-			      count_t  hightId,
-			      count_t curr_id,
+			      count_t low_id,
+			      count_t  high_id,
+			      count_t curr_id, // current id of animals of size n0
 			      std::vector<count_t>* results,
 			      std::ofstream* dump_file) {
 
+  
+  std::list< index_t >::iterator iter = untried.begin();
+  
 
-  list< vector<coord_t> >::iterator iter = untried.begin();
 
   while(iter != untried.end()) {      
-    
-    if(curr_id >= hight_id) {
-      return;
+
+
+      
+    if(curr_id >= high_id) {
+      return curr_id;
     }
     
-    Cell c = *iter;
+    index_t c = *iter;
     
-    // If the polycube 'p' with addition of cell 'c' becomes non convex, add will not add cell 'c' and return false.
-    // The cell will not be removed from the untried list allowing any convex polycubes that are perfixed with
-    // 'p' and contain 'c' to be reached through a different path. 
-    if (p.add(c) == true) {
-      
+    // Add cell into the lattice animal. The add function will return false and abort opertaion if
+    // this addition violates the lattice animal property.
+    if (a.add(c) == true) {
+      //            a.get_stack();    // TODO: RM
       iter = untried.erase(iter);
       
     } else {
@@ -105,57 +97,50 @@ count_t redelemeier_recursive(A a,
       
     }
     
-    // Print progress
-    static int x4 = 1;
-    if(p.size() == 4) {
-      cout << "Progress... "  << x4 << "/86" << endl;
-      x4++;
+
+
+    // Count only those which are in the search range
+    if(a.size() >= n0 && curr_id >= low_id && curr_id < high_id) {
+      (*results)[a.size()]++;
+
+
     }
     
-    // count only polyominoes that are in the search range
-    if(p.size() >= n0 && curr_id >= low_id && curr_id < hight_id) {
-      p.dump_to_file();
-      (*results)[p.size()]++;
-    }
-    
-    if(p.size() < n0 || (p.size() >= n0 && p.size() < n && curr_id >= low_id && curr_id < hight_id) ) {
-      UntriedSet untried_next = UntriedSet(untried);
+    if(a.size() < n0 || 
+       (a.size() >= n0       && 
+	a.is_full() == false && 
+	curr_id >= low_id    && 
+	curr_id < high_id) ) {
+      
+      std::list< index_t > untried_next = std::list< index_t >(untried);
       
       // add neighbours of c to the untried set
       // will add only neghbours which are not negibours of p
-      add_new_neig_to_untried(c, &untried_next, &p); 
       
-      curr_id = redelemeier_recursive(p, untried_next, n, n0, curr_id, low_id, hight_id, results);
+       untried_next.merge( a.get_new_untried() );
+      
+       curr_id = redelemeier_recursive(a,
+				       untried_next,
+				       n0,
+				       low_id, 
+				       high_id,
+				       curr_id,
+				       results,
+				       dump_file); 
     }
     
-    if(p.size() == n0) 
+
+    if(a.size() == n0) 
       curr_id++;
     
-    p.remove(c);
+    a.pop();
   }
-  
 
-  
-
-
-
-
-
-
+  return curr_id;
 }
 			   
 			   
 							
-
-
-
-
-
-
-
-
-
-
 
 
 
