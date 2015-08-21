@@ -12,6 +12,7 @@
 #include "simplehttp.h"
 #include "counting_algorithm.h"
 #include "convex_counter.h"
+#include "wc_lattice_animal.h"
 #include "main.h"
 
 
@@ -19,7 +20,7 @@ using namespace std;
 using namespace GetOpt;
 
 
-#define CLIENT_VERSION "1.6"
+#define CLIENT_VERSION "2.0"
 #define DEFAULT_HOST "melon"
 #define ALLOCATE_PAGE "allocate"
 #define REPORT_PAGE "report"
@@ -33,6 +34,13 @@ vector< pair< string, CountingAlgorithm > > ALGORITHMS = {
   make_pair("fixed 2d", redelemeier_main<LatticeAnimal, 2>),
   make_pair("fixed 3d", redelemeier_main<LatticeAnimal, 3>),
   make_pair("fixed 4d", redelemeier_main<LatticeAnimal, 4>),
+  make_pair("fixed 5d", redelemeier_main<LatticeAnimal, 5>),
+  make_pair("fixed 6d", redelemeier_main<LatticeAnimal, 6>),
+
+
+  make_pair("weakly convex fixed 2d", redelemeier_main<WeaklyConvexLatticeAnimal, 2>),
+  make_pair("weakly convex fixed 3d", redelemeier_main<WeaklyConvexLatticeAnimal, 3>),
+  make_pair("weakly convex fixed 4d", redelemeier_main<WeaklyConvexLatticeAnimal, 4>),
 
   make_pair("trivial redelemeier 3d (obsolete)", redelemeier_recursive_3d),
   make_pair("trivial redelemeier weak convex 3d  (obsolete)", redelemeier_3d_line_convex),

@@ -18,8 +18,8 @@ BIN_DIR=bin
 
 
 CXX=g++
-CC_FLAGS=-c -MMD -MP -Wall -std=c++0x -DNDEBUG #-g
-LD_FLAGS= -DNDEBUG
+CC_FLAGS=-c -MMD -MP -Wall -std=c++0x -DNDEBUG  -g # -D_GLIBCXX_DEBUG #
+LD_FLAGS= -DNDEBUG  -g # -D_GLIBCXX_DEBUG #-DNDEBUG
 SUFFIX=linux_debug
 
 EXE=$(BIN_DIR)/run_$(SUFFIX)

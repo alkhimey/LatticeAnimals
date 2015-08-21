@@ -47,30 +47,15 @@ std::vector<coord_t> LatticeAnimal::calc_coordinates(index_t idx) const
 }
 
 
-
-bool LatticeAnimal::inner_add(index_t idx) {
-  return true; 
-}
-
-
-
-bool LatticeAnimal::add(const index_t idx)
+void LatticeAnimal::add(const index_t idx)
 {
   assert(is_full() == false);
   assert(_lattice[idx] == false);
 
-  if (inner_add(idx) == true) {
 
-    _stack.push_back(idx);
-    _lattice[idx] = true;
+  _stack.push_back(idx);
+  _lattice[idx] = true;
 
-    return true;
-
-  } else {
-
-    return false;
-
-  }
 }
 
 
@@ -116,4 +101,23 @@ std::list< index_t > LatticeAnimal::get_new_untried() const
   }
 
   return result;
+}
+
+
+
+
+void LatticeAnimal::dump(std::ofstream* dump_file) 
+{
+
+  if(dump_file == NULL) {
+    return;
+  }
+      
+  for(std::vector< index_t >::iterator iter = _stack.begin(); iter !=  _stack.end(); iter++) {
+    (*dump_file) << *iter << " ";
+  }
+  
+  (*dump_file) << std::endl; 
+
+  
 }

@@ -37,7 +37,7 @@ void redelemeier_main (coord_t n,
 {
 
   A a(D,n);
-  a.add_origin();
+  a.add(a.get_origin()); // add the origin
     
   count_t curr_id = 0;
   std::list< index_t > untried = a.get_new_untried();
@@ -60,7 +60,7 @@ void redelemeier_main (coord_t n,
 
 
 template <class A>
-count_t redelemeier_recursive(A a,
+count_t redelemeier_recursive(A &a,
 			      std::list< index_t > &untried,
 			      coord_t n0,
 			      count_t low_id,
@@ -76,18 +76,16 @@ count_t redelemeier_recursive(A a,
 
   while(iter != untried.end()) {      
 
-
-      
     if(curr_id >= high_id) {
       return curr_id;
     }
     
     index_t c = *iter;
     
-    // Add cell into the lattice animal. The add function will return false and abort opertaion if
-    // this addition violates the lattice animal property.
-    if (a.add(c) == true) {
-      //            a.get_stack();    // TODO: RM
+    // Add cell into the new lattice animal only if the lattice animal is in the counted class.
+    if (a.can_add(c)) {
+
+      a.add(c);
       iter = untried.erase(iter);
       
     } else {
@@ -97,12 +95,13 @@ count_t redelemeier_recursive(A a,
       
     }
     
-
-
     // Count only those which are in the search range
-    if(a.size() >= n0 && curr_id >= low_id && curr_id < high_id) {
+    if(a.size() >= n0 && curr_id >= low_id && curr_id < high_id && a.is_in_class()) {
       (*results)[a.size()]++;
 
+      if (dump_file != NULL) {
+	a.dump(dump_file);
+      }
 
     }
     
@@ -117,16 +116,16 @@ count_t redelemeier_recursive(A a,
       // add neighbours of c to the untried set
       // will add only neghbours which are not negibours of p
       
-       untried_next.merge( a.get_new_untried() );
+      untried_next.splice(untried_next.end(),  a.get_new_untried() );
       
-       curr_id = redelemeier_recursive(a,
-				       untried_next,
-				       n0,
-				       low_id, 
-				       high_id,
-				       curr_id,
-				       results,
-				       dump_file); 
+      curr_id = redelemeier_recursive(a,
+				      untried_next,
+				      n0,
+				      low_id, 
+				      high_id,
+				      curr_id,
+				      results,
+				      dump_file); 
     }
     
 

@@ -62,19 +62,39 @@ TEST_CASE( "is_valid_cell", "[inner], [precomputation]" )  {
 
 
   SECTION("1d") {
-    CHECK(LatticeAnimal::is_valid_cell({0}));
-    CHECK(LatticeAnimal::is_valid_cell({1}));
-    CHECK_FALSE(LatticeAnimal::is_valid_cell({-1}));
+    LatticeAnimal a = LatticeAnimal(1,4);
+
+    CHECK(a.is_valid_cell({0}));
+    CHECK(a.is_valid_cell({1}));
+    CHECK_FALSE(a.is_valid_cell({-1}));
   }
 
   SECTION("2d") {
-    CHECK(LatticeAnimal::is_valid_cell({0,0}));
-    CHECK(LatticeAnimal::is_valid_cell({1,1}));
-    CHECK_FALSE(LatticeAnimal::is_valid_cell({-1,-1}));
-    CHECK_FALSE(LatticeAnimal::is_valid_cell({-1,0}));
-    CHECK_FALSE(LatticeAnimal::is_valid_cell({0,-1}));
-    CHECK(LatticeAnimal::is_valid_cell({1,-1}));
-    CHECK_FALSE(LatticeAnimal::is_valid_cell({-1,1}));
+    LatticeAnimal a = LatticeAnimal(2,4);
+     
+    CHECK(a.is_valid_cell({0,0}));
+    CHECK(a.is_valid_cell({1,1}));
+    CHECK_FALSE(a.is_valid_cell({-1,-1}));
+    CHECK_FALSE(a.is_valid_cell({-1,0}));
+    CHECK_FALSE(a.is_valid_cell({0,-1}));
+    CHECK(a.is_valid_cell({1,-1}));
+    CHECK_FALSE(a.is_valid_cell({-1,1}));
+
+  }
+
+  SECTION("out of boundaries") {
+    LatticeAnimal a = LatticeAnimal(2,4);
+
+    CHECK_FALSE(a.is_valid_cell({0,4}));
+    CHECK_FALSE(a.is_valid_cell({0,-4}));
+    CHECK_FALSE(a.is_valid_cell({4,2}));
+    CHECK_FALSE(a.is_valid_cell({-4,2}));
+
+    // Notice: {-3,0} is inside lattice boundaries but still not valid.
+    CHECK(a.is_valid_cell({0,3}));
+    CHECK(a.is_valid_cell({3,-3}));
+
+
 
   }
 
@@ -245,7 +265,6 @@ TEST_CASE( "index and coordinate calculation interleave", "[inner]") {
 	CAPTURE( idx );
 	
 	CAPTURE(a.calc_coordinates(idx)[0]);
-	CAPTURE(a.calc_coordinates(idx)[-1]);
 
 	REQUIRE(a.calc_index(a.calc_coordinates(idx)) == idx); 
       }
@@ -263,7 +282,7 @@ TEST_CASE( "size with pop", "[lattice aminal]")
     LatticeAnimal a = LatticeAnimal(2, 5) ;
     REQUIRE(a.size() == 0);
 
-    a.add_origin();
+    a.add(a.get_origin());
 
     REQUIRE(a.size() == 1);
 
@@ -276,7 +295,7 @@ TEST_CASE( "size with pop", "[lattice aminal]")
     LatticeAnimal a = LatticeAnimal(3, 30) ;
     REQUIRE(a.size() == 0);
 
-    a.add_origin();
+    a.add(a.get_origin());
     a.add(0);
     a.add(1);
     a.add(2);
@@ -300,7 +319,7 @@ TEST_CASE( "is_full", "[lattice aminal]") {
   LatticeAnimal a = LatticeAnimal(2, 3) ;
   REQUIRE_FALSE(a.is_full()); 
 
-  a.add_origin();
+  a.add(a.get_origin());
 
   REQUIRE_FALSE(a.is_full()); 
    
@@ -325,27 +344,33 @@ TEST_CASE( "add", "[lattice aminal]") {
     REQUIRE_FALSE((ab.is_on_lattice(idx)));
   }
 
-  ab.add_origin();
+  ab.add(ab.get_origin());
 
   for( index_t idx = 1; idx < 5; idx++) {
-    REQUIRE(ab.add(idx));
+    
+
+    REQUIRE( ab.can_add(idx) );
+    ab.add(idx);
     REQUIRE((ab.is_on_lattice(idx)));
     }
 }
 
-TEST_CASE( "add with pop", "[lattice aminal]") {
+TEST_CASE( "can add", "[lattice aminal]") {
 
   LatticeAnimal a = LatticeAnimal(5, 8) ;
   
-  a.add_origin();
+  a.add(a.get_origin());
   
-  REQUIRE(a.add(0));
-  REQUIRE(a.add(1));
-  REQUIRE(a.add(2));
-  REQUIRE(a.add(3));
-  REQUIRE(a.add(4));
-  
-  REQUIRE(a.add(40));
+  REQUIRE(a.can_add(0));
+  a.add(0);
+  REQUIRE(a.can_add(1));
+  a.add(1);
+  REQUIRE(a.can_add(2));
+  a.add(2);
+  REQUIRE(a.can_add(3));
+  a.add(3);
+  REQUIRE(a.can_add(4));
+  a.add(4);
 }
 
 
@@ -358,13 +383,13 @@ TEST_CASE( "get new untried", "[lattice aminal]")
   SECTION("basic origin only") {
     
     LatticeAnimal a = LatticeAnimal(2, 5) ;
-    a.add_origin();
+    a.add(a.get_origin());
     
     untried = a.get_new_untried();
     CHECK(untried.size() == 2);
 
     a = LatticeAnimal(3, 5) ;
-    a.add_origin();
+    a.add(a.get_origin());
     
     untried = a.get_new_untried();
     CHECK(untried.size() == 3);
@@ -375,15 +400,15 @@ TEST_CASE( "get new untried", "[lattice aminal]")
   SECTION("extensive") {
     
     //
-    // 20 21 22 23 24
-    // 15 16 17 18 19
-    // 10 11 12 13 14
-    //  5  6  7  8  9
-    //  0  1  2  3  4
+    // 20   21   22   23   24
+    // 15   16  (17)  18   19
+    // 10   11  (12) (13)  14
+    //  5    6    7    8    9
+    //  0    1    2    3    4
     //
 
     LatticeAnimal a = LatticeAnimal(2, 3) ;
-    a.add_origin(); // 12
+    a.add(a.get_origin()); // 12
     
     untried = a.get_new_untried();
     REQUIRE(untried.size() == 2);
@@ -399,9 +424,9 @@ TEST_CASE( "get new untried", "[lattice aminal]")
 
     a.add(17);
     untried = a.get_new_untried();
-    CHECK(untried.size() == 2);
+    CHECK(untried.size() == 1);
     CHECK( IN_LIST(untried, 22) );
-    CHECK( IN_LIST(untried, 18) );
+
 
   }
 

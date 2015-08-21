@@ -6,6 +6,7 @@
 #include <utility>
 #include <math.h>
 #include <assert.h>
+#include <fstream>
 
 #include "basic_types.h"
 
@@ -48,17 +49,7 @@ protected:
    *  Precomputed lists of neighbours for each cell. 
    *  Notice that it takes into account that our lattice has some "forbidden" cells.
    */
-  std::vector< std::list< index_t > >    _neighbours;     
-
-  /**
-   * Inner add function. It should be hidden by specialised lattice animal classes that 
-   * inherit from this class. 
-   *
-   * @param  idx Reuse of the index that was calculated out of c.
-   * @return     True is the cell is added. False if the cell is rejected and not added.
-   *             The public add function acts upon this value.
-   */
-  bool inner_add(index_t idx);
+  std::vector< std::list< index_t > >    _neighbours;
 
 public:
   
@@ -130,9 +121,19 @@ public:
    *           and some other coordinate is negative. 
    *
    */
-  static inline bool is_valid_cell( const std::vector< coord_t > c) {
+  inline bool is_valid_cell( const std::vector< coord_t > c) {
 
-    std::vector< coord_t >::const_iterator iter = c.begin();
+    std::vector< coord_t >::const_iterator iter;
+
+    // Out of lattice boundaries
+    for ( iter = c.begin(); iter < c.end(); iter++) {
+      if (*iter <= -_n || *iter >= _n) {
+	return false;
+      }
+    }	     
+
+    // Inside invalid zone
+    iter = c.begin();
 
     if (*iter < 0) { 
 	return false; 
@@ -173,15 +174,23 @@ public:
 
 
   /**
-   * Adds the origin cell to the lattice animal. 
+   * This function cheks if the lattice animal that is the product of addition of
+   * of the cell to the current animal is inside the lattice animal class.
+   * This procedure should be hidden by inherited classes.
+   *
+   * @param  idx The index of the cell that this check is performed for.
+   * @return     True if the cell can be aded
+   *
    */
-  void add_origin() {
-    std::vector<coord_t> c(_d, 0);
-    add(calc_index(c));
+  bool can_add(index_t idx) {
+    return true;
   }
 
   /**
    * Remove the cell that was added last.
+   * This function should be hidden by inherited classes.
+   * 
+   * @pre Lattice animal is not empty.
    */
   void pop();
 
@@ -189,33 +198,30 @@ public:
    * Add new cell to the lattice animal. It is assumed that this function will not be called
    * with a cell that is already part of the lattice animal. If this happens in debug version,
    * an assertion will fail. In release version, this will make the program behaviour unexpected.
+   * This procedure should be hidden by inherited classes.
    *
    * @pre        idx is not contained in the lattice animal. Lattice animal has not reached maximal size.
-   * @param  idx Index of the added cellx
-   * @return     True is the cell is added. False if the cell is rejected and not added.
-   *             The reason of rejection depends on the type of the class this animal 
-   *             belongs to. Rejection means that the new animal does not belong to that
-   *             class.
+   * @param  idx Index of the added cell.
    */
-  bool add(const index_t idx);
+  void add(const index_t idx);
 
   /**
-   * Check if cell the polycube containing the cell c
-   *
-   * @param  idx Index of the cell in question.
-   * @return     True if the cell is part of this lattice aminal.
+   * Get the index of the origin cell
+   * @return The index of the origin cell.
    */
-  //bool is_contained(const index_t idx) const;
-
+  index_t get_origin() {
+    std::vector<coord_t> c(_d, 0);
+    return calc_index(c);
+  }
 
   /**
-   * Check if cell c adjacent to some cell of this polycube
+   * Determines if the current lattice animal belings to the current lattice animal class. 
+   * This procedure should be hidden by inherited classes.
    *
-   * @param  idx Index of the cell in question.
-   * @return     True if the cell is adjacent to some cell of this lattice animal.
-   */
-  //bool is_neigh(const index_t idx) const;
-
+   **/
+  bool is_in_class(void) {
+    return true;
+  }
 
   /**
    * Get a list of cells that are neighbours of the newly added cell but have not been
@@ -240,6 +246,14 @@ public:
     assert(size() <= _n);
     return size() == _n;
   }
+
+
+
+  /**
+   * Dump the lattice animal into a file. Used for debugging purposes.
+   */
+  void dump(std::ofstream* dump_file);
+
 };
 
 
