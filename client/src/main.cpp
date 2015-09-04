@@ -1,3 +1,6 @@
+#define MAIN_CPP_
+
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -13,12 +16,17 @@
 #include "counting_algorithm.h"
 #include "convex_counter.h"
 #include "wc_lattice_animal.h"
+#include "adj_count_lattice_animal.h"
+
+#include "simple_counter.h"
+#include "histogram_counter.h"
+
+#include "logging.h"
 #include "main.h"
 
 
 using namespace std;
 using namespace GetOpt;
-
 
 #define CLIENT_VERSION "2.0"
 #define DEFAULT_HOST "melon"
@@ -28,27 +36,37 @@ using namespace GetOpt;
 #define DEFAULT_ALGO_ID 0
 
 
-
-
 vector< pair< string, CountingAlgorithm > > ALGORITHMS = {
-  make_pair("fixed 2d", redelemeier_main<LatticeAnimal, 2>),
-  make_pair("fixed 3d", redelemeier_main<LatticeAnimal, 3>),
-  make_pair("fixed 4d", redelemeier_main<LatticeAnimal, 4>),
-  make_pair("fixed 5d", redelemeier_main<LatticeAnimal, 5>),
-  make_pair("fixed 6d", redelemeier_main<LatticeAnimal, 6>),
+  make_pair("fixed 2d", redelemeier_main<LatticeAnimal, SimpleCounter, 2>),
+  make_pair("fixed 3d", redelemeier_main<LatticeAnimal, SimpleCounter, 3>),
+  make_pair("fixed 4d", redelemeier_main<LatticeAnimal, SimpleCounter, 4>),
+  make_pair("fixed 5d", redelemeier_main<LatticeAnimal, SimpleCounter, 5>),
+  make_pair("fixed 6d", redelemeier_main<LatticeAnimal, SimpleCounter, 6>),
 
 
-  make_pair("weakly convex fixed 2d", redelemeier_main<WeaklyConvexLatticeAnimal, 2>),
-  make_pair("weakly convex fixed 3d", redelemeier_main<WeaklyConvexLatticeAnimal, 3>),
-  make_pair("weakly convex fixed 4d", redelemeier_main<WeaklyConvexLatticeAnimal, 4>),
+  make_pair("weakly convex fixed 2d", redelemeier_main<WeaklyConvexLatticeAnimal, SimpleCounter, 2>),
+  make_pair("weakly convex fixed 3d", redelemeier_main<WeaklyConvexLatticeAnimal, SimpleCounter, 3>),
+  make_pair("weakly convex fixed 4d", redelemeier_main<WeaklyConvexLatticeAnimal, SimpleCounter, 4>),
+  make_pair("weakly convex fixed 5d", redelemeier_main<WeaklyConvexLatticeAnimal, SimpleCounter, 5>),
 
   make_pair("trivial redelemeier 3d (obsolete)", redelemeier_recursive_3d),
   make_pair("trivial redelemeier weak convex 3d  (obsolete)", redelemeier_3d_line_convex),
   make_pair("trivial redelemeier strong convex 3d (obsolete)", redelemeier_3d_full_convex),
+
+  make_pair("count total adjacent cells 2d", redelemeier_main<AdjCountLatticeAnimal, SimpleCounter, 2>),
+  make_pair("count total adjacent cells 3d", redelemeier_main<AdjCountLatticeAnimal, SimpleCounter, 3>),
+
+  make_pair("count histo adjacent cells 2d", redelemeier_main<AdjCountLatticeAnimal, HistogramCounter, 2>),
+  make_pair("count hosto adjacent cells 3d", redelemeier_main<AdjCountLatticeAnimal, HistogramCounter, 3>),
+  
   
   //make_pair("redelemeier with pruning weak convex 3d (obsolete)", redelemeier_with_pruning::line_convex_counter_3d),
   //make_pair("redelemeier with pruning strong convex 3d (obsolete)", redelemeier_with_pruning::full_convex_counter_3d)
 };
+
+
+
+
 
 /*
  * Main entry point
@@ -60,7 +78,7 @@ vector< pair< string, CountingAlgorithm > > ALGORITHMS = {
  * 4. Report results or print them on the screen.
  *
  */
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[]){ 
   string host = "";
   string dump_file_name = "";
   int portno;
@@ -72,37 +90,45 @@ int main(int argc, char* argv[]) {
 
   ofstream dump_file;
   
+  /* Configure logger (log4cxx) */
+  PropertyConfigurator::configure(LOGGING_CONF_PATH);
+ 
+
+  LOG4CXX_INFO(logger, "Starting program. Client version: " << CLIENT_VERSION);
+
   parseCmdParams(argc, argv, &host,&portno, &n, &n0, &lowId, &hightId, &algo_id, &dump_file_name);
   
   /* Main loop (only one iteration if host is not present) */
   while(true) {
  
     /* If we need to get more parameters from server */
-    if(host != "") 
-      if(getJobFromServer(host, portno, &secret, &algo_id, &n, &n0, &lowId, &hightId) == false)
-	continue;
+    if(host != "") {
+      if(getJobFromServer(host, portno, &secret, &algo_id, &n, &n0, &lowId, &hightId) == false) {
+	break;
+      }
+    }
     
     if(algo_id >= (int)ALGORITHMS.size()) {
-      cout << "ERROR Client does not support alogrithm " << algo_id << endl;
+      LOG4CXX_ERROR(logger, "Client does not support alogrithm id " << algo_id);
       exit(0);
     }
 
     if(n < n0) {
-      cout << "ERROR n < n0" << algo_id << endl;
+      LOG4CXX_ERROR(logger, "n=" << n << " can't be lower than " << "n0=" << n0); 
       exit(0);
     }
 
     if (dump_file_name != "") {
-      cout << "Opening dump file "<< dump_file_name <<"..." << endl;
-
+      LOG4CXX_INFO(logger, "Attempting to open dump file " << dump_file_name);
       dump_file.open(dump_file_name.c_str());
       if (dump_file.fail()) {
-	cout << "ERROR opening dump file " << dump_file_name << endl;
+	LOG4CXX_WARN(logger, "Could not open dump file " << dump_file_name);
+      } else {
+	LOG4CXX_INFO(logger, "Opened dump file "<< dump_file_name <<" succesfully");
       }
     }
 
-    cout << "Running algorithm \"" << ALGORITHMS[algo_id].first << "\"..." << endl;
-  
+    LOG4CXX_INFO(logger, "Running algorithm \"" << ALGORITHMS[algo_id].first << "\"...");
     
     vector<count_t> results = vector<count_t>(n + 1, 0);
     clock_t c0, c1;
@@ -116,7 +142,7 @@ int main(int argc, char* argv[]) {
     dump_file.close();
 
     printResults(results);
-    cout << "This took " << t << " seconds" << endl;
+    LOG4CXX_INFO(logger, "Finished running algorithm");
     
     /* If we need to report result back to server */
     if(host != "") {
@@ -127,6 +153,8 @@ int main(int argc, char* argv[]) {
   }
   
   
+  LOG4CXX_INFO(logger, "Program finished");
+
 #if defined (_WIN32)
   system("pause");
 #endif
@@ -199,6 +227,8 @@ void usage(string app_name) {
 
 void parseCmdParams(int argc, char* argv[], string *host, int *portno, unsigned int *n, unsigned int *n0, 
 		    count_t *lowId, count_t *hightId, int *algo_id, string* dump_file_name) {
+
+  LOG4CXX_INFO(logger, "Parsing command line parameters...");
   GetOpt_pp ops(argc, argv);
   ops.exceptions_all(); 
   bool success = true;
@@ -253,19 +283,23 @@ void parseCmdParams(int argc, char* argv[], string *host, int *portno, unsigned 
   }
   
   if(!success) {
-    cout << "ERROR parsing parameters" << endl << endl;
+    LOG4CXX_ERROR(logger, "Can not parse command line parameters");
+    cout << endl;
     usage(ops.app_name());
   }
 }
 
 
 bool getJobFromServer(string host, int portno,  string *secret, int* algo_id, unsigned int *n, unsigned int *n0, count_t *lowId, count_t *hightId) {
-  cout << "Connecting to " << host << ":" << portno << "..." <<  endl;
+  
+  LOG4CXX_INFO(logger, "Will attempt to recieve job from server...");
+  
+  LOG4CXX_INFO(logger, "Connecting to " << host << ":" << portno << "...");
   
   char* response = httpGet(host.c_str(), ALLOCATE_PAGE, portno);
 
   if(isResponseOk(response) == false) {
-    cout << "Server error" << endl;
+    LOG4CXX_ERROR(logger, "Server error (response not ok)");
     return false;
   }
 
@@ -273,8 +307,8 @@ bool getJobFromServer(string host, int portno,  string *secret, int* algo_id, un
   char* content = extractContent(response);
 
   if(content == NULL) {
-    cout << "ERROR extracting content from response" << endl;
-    exit(0);
+    LOG4CXX_ERROR(logger, "Could not extract the content from the response");
+    return false;
   }
   
   string expectedVersion;
@@ -282,25 +316,27 @@ bool getJobFromServer(string host, int portno,  string *secret, int* algo_id, un
   content = readNextWord(content, &expectedVersion);
 
   if (expectedVersion.compare("0") == 0) {
-    cout << "No more jobs available. Prorbably because server allocated all jobs." << endl;
+    LOG4CXX_INFO(logger, "No more jobs available. Prorbably because server allocated all jobs"); 
     return false;
   } else if (expectedVersion.compare(CLIENT_VERSION) != 0) {
-    cout << "Version mismatch, please download client version " << expectedVersion  << endl;
+    LOG4CXX_ERROR(logger, "Version mismatch, server is expecting client version " << expectedVersion); 
     return false;
   }
   
   if(splitContent(content, secret, algo_id, n, n0, lowId, hightId) == 0) {
-    cout << "ERROR parsing server response" << endl;
+    LOG4CXX_ERROR(logger, "Could not parse server response ");
     return false;
   }
   
-  cout << "Recieved job from server n=" << *n << " n0=" << *n0 << " algo_id=" << *algo_id << " lowId=" << *lowId << " hightId=" << *hightId << endl;
+  LOG4CXX_INFO(logger, "Recieved job from server n=" << *n << " n0=" << *n0 << " algo_id=" << *algo_id << " lowId=" << *lowId << " hightId=" << *hightId);
   return true;
 }
 
 void reportResultsToServer(string host, int portno, string secret, count_t lowId, count_t hightId, vector<count_t> mycount, double cpuTime) {
 
   bool temp = false; // TODO: Remove
+
+  LOG4CXX_ERROR(logger, "Reporting results to the server...");
 
   stringstream req;
   req << REPORT_PAGE << "?secret=" << secret << "&low=" << lowId << "&hight=" << hightId << "&cpu=" << cpuTime << "&res=";
@@ -315,19 +351,29 @@ void reportResultsToServer(string host, int portno, string secret, count_t lowId
     }
   }
 
+  // TODO: Remove
   if (!temp || mycount.size() < 11) {
     cout << "!!!!!!!!!!!!!!!" << secret << " " << lowId << " "<<hightId << endl;
       exit(0);
   }
 
   httpGet(host.c_str(), req.str().c_str(), portno);
+
+  LOG4CXX_ERROR(logger, "Finished reporting results");
+
 }
 
 void printResults(vector<count_t> mycount) {
   unsigned int i = 0;
+
   while(mycount[i] == 0)
     i++;
-  for(; i < mycount.size(); i++)
-    cout << i << "\t" << mycount[i] << endl;
+  for(; i < mycount.size(); i++) {
+    if(logger == NULL) {
+      cout << i << "\t" << mycount[i] << endl;
+    } else {
+      LOG4CXX_INFO(logger, "Result for " << i << "\t is " << mycount[i]);
+    }
+  }
 }
 

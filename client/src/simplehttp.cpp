@@ -18,18 +18,22 @@
 
 #endif
 
+#include <errno.h>
+
+#include "logging.h"
+
 #include "simplehttp.h"
 
-
 static char buffer[BUFFER_MAX_SIZE];
+
 
 /* Some code is adapted from http://www.linuxhowtos.org/C_C++/socket.htm */
 
 void error(const char *msg) {
 #if defined (_WIN32)
-	printf("%s: %d\n", msg, WSAGetLastError());
+	LOG4CXX_ERROR(logger, msg << ": " << WSAGetLastError());
 #else
-	perror(msg);
+	LOG4CXX_ERROR(logger, msg << ": " <<  strerror(errno) );
 #endif
     exit(0);
 }

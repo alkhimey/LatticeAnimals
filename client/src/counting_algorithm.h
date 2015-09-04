@@ -6,6 +6,7 @@
 #include <fstream>
 #include "basic_types.h"
 #include "lattice_animal.h"
+#include "logging.h"
 
 /* Prototype for a counting algorthim entry point 
  * 
@@ -26,7 +27,7 @@ typedef void (*CountingAlgorithm) (coord_t n,
 				   std::ofstream* dump_file);
 
 
-template <class A, dim_t D>
+template <class A, class C, dim_t D>
 void redelemeier_main (coord_t n,
 		       //dim_t d,
 		       coord_t n0,
@@ -36,12 +37,14 @@ void redelemeier_main (coord_t n,
 		       std::ofstream* dump_file)
 {
 
+  C counter(n, D);
   A a(D,n);
   a.add(a.get_origin()); // add the origin
     
   count_t curr_id = 0;
   std::list< index_t > untried = a.get_new_untried();
-  (*results)[1] = 1;
+
+  counter.increment(a.size(), a.get_count());
 
   redelemeier_recursive(a,
 			untried,
@@ -49,24 +52,32 @@ void redelemeier_main (coord_t n,
 			low_id, 
 			high_id,
 			curr_id,
-			results,
+			counter,
 			dump_file); 
 
   a.pop();
+
+  // Write results to the logger
+  counter.output_to_log();
+
+
+  // Return results in raw form
+  counter.output_to_vector(results);
+
 }
 
 
 
 
 
-template <class A>
+template <class A, class C>
 count_t redelemeier_recursive(A &a,
 			      std::list< index_t > &untried,
 			      coord_t n0,
 			      count_t low_id,
 			      count_t  high_id,
 			      count_t curr_id, // current id of animals of size n0
-			      std::vector<count_t>* results,
+			      C &counter,
 			      std::ofstream* dump_file) {
 
   
@@ -97,7 +108,11 @@ count_t redelemeier_recursive(A &a,
     
     // Count only those which are in the search range
     if(a.size() >= n0 && curr_id >= low_id && curr_id < high_id && a.is_in_class()) {
-      (*results)[a.size()]++;
+      
+
+      //(*results)[a.size()] += a.get_count();
+      counter.increment(a.size(), a.get_count());
+
 
       if (dump_file != NULL) {
 	a.dump(dump_file);
@@ -124,7 +139,7 @@ count_t redelemeier_recursive(A &a,
 				      low_id, 
 				      high_id,
 				      curr_id,
-				      results,
+				      counter,
 				      dump_file); 
     }
     

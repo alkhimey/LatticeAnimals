@@ -60,7 +60,7 @@ public:
    * @param  d Dimension of the lattice 
    * @param  n Upper limit to the size of the animal (maximum number of cells).
    */
- LatticeAnimal(dim_t d, coord_t n)  {
+  LatticeAnimal(dim_t d, coord_t n)  {
     assert(d > 0);
     assert(n > 0);
 
@@ -73,8 +73,7 @@ public:
     _index_to_coord = std::vector< std::vector< coord_t > >(_lattice.size());
     _neighbours     =  std::vector< std::list< index_t > >(_lattice.size());
 
-    // Precompute index to ccordinate list translation table
-    //
+    // precompute index to ccordinate list translation table
     for(index_t idx = 0; idx < _lattice.size(); idx++) {
       
       std::vector< coord_t > c = calc_coordinates(idx);
@@ -82,8 +81,7 @@ public:
       _index_to_coord[idx] = c;
     }
 
-    // Precompute index to list of neighbours translation table
-    //
+    // precompute index to list of neighbours translation table
     for(index_t idx = 0; idx < _lattice.size(); idx++) {
 
       std::vector< coord_t > c = _index_to_coord[idx];
@@ -95,10 +93,9 @@ public:
 	for (int offset = -1; offset <= 1; offset+=2) {
 	  std::vector< coord_t > c2 = c;
 
-
-	  // Notice that cells at the edge have neighbours beyond the edge. This is ok.
 	  c2[dim] += offset;
-
+	  
+	  // valid and inside the lattice
 	  if(is_valid_cell(c2)) {
 
 	    neigh.push_back(calc_index(c2));
@@ -110,6 +107,24 @@ public:
     }
   }  
 
+
+
+  /**
+   * Checks if the cell is inside the valid region on the lattice.
+   */
+  inline bool is_inside_lattice( const std::vector< coord_t > c) {
+  
+    std::vector< coord_t >::const_iterator iter;
+    
+    // Out of lattice boundaries
+    for ( iter = c.begin(); iter < c.end(); iter++) {
+      if (*iter <= -_n || *iter >= _n) {
+	return false;
+      }
+    }
+
+    return true;
+  }
 
   /**
    * Checks if the cell is inside the valid region on the lattice.
@@ -125,12 +140,9 @@ public:
 
     std::vector< coord_t >::const_iterator iter;
 
-    // Out of lattice boundaries
-    for ( iter = c.begin(); iter < c.end(); iter++) {
-      if (*iter <= -_n || *iter >= _n) {
-	return false;
-      }
-    }	     
+    if (is_inside_lattice(c) == false) {
+      return false;
+    }   
 
     // Inside invalid zone
     iter = c.begin();
@@ -222,6 +234,15 @@ public:
   bool is_in_class(void) {
     return true;
   }
+
+  /** 
+   * Return the count of this lattice animal. 
+   * Ususaly will be "1", but Some counting schemes may give different weight to diferent animals.
+   * This procedure should be hidden by inherited classes.
+   */
+  inline count_t get_count(void) {
+    return 1;
+  } 
 
   /**
    * Get a list of cells that are neighbours of the newly added cell but have not been

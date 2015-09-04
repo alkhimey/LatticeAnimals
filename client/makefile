@@ -18,8 +18,12 @@ BIN_DIR=bin
 
 
 CXX=g++
-CC_FLAGS=-c -MMD -MP -Wall -std=c++0x -DNDEBUG  -g # -D_GLIBCXX_DEBUG #
-LD_FLAGS= -DNDEBUG  -g # -D_GLIBCXX_DEBUG #-DNDEBUG
+CC_FLAGS=-c -MMD -MP -Wall -std=c++0x -DNDEBUG
+#UNIT_TESTS_CC_FLAGS=-c -MMD -MP -Wall -std=c++0x -g -D_GLIBCXX_DEBUG
+LD_FLAGS= -DNDEBUG 
+#UNIT_TESTS_LD_FLAGS=-g -D_GLIBCXX_DEBUG
+
+LD_LIBS= -llog4cxx
 SUFFIX=linux_debug
 
 EXE=$(BIN_DIR)/run_$(SUFFIX)
@@ -34,20 +38,23 @@ UNIT_TESTS_OBJS=$(UNIT_TESTS_SRCS:$(UNIT_TESTS_DIR)/%.cpp=$(OBJ_DIR)/$(UNIT_TEST
 
 
 
-all: dirs $(EXE) $(UNIT_TESTS_EXE)
+all: dirs $(BIN_DIR)/log4cxx.properties $(EXE) $(UNIT_TESTS_EXE)
 
 
 # Link only if dependency changed
 #
 $(EXE): $(OBJS)
-	$(CXX) $(LD_FLAGS) -o $@ $^
+	$(CXX) $(LD_FLAGS) -o $@ $^ $(LD_LIBS)
 
 
 # Similarly, link unit tests (exclude main from link)
 #
 $(UNIT_TESTS_EXE): $(OBJS_WITHOUT_MAIN) $(UNIT_TESTS_OBJS)
-	$(CXX) $(LD_FLAGS) -o $@ $^
+	$(CXX) $(LD_FLAGS) -o $@ $^ $(LD_LIBS)
 
+
+$(BIN_DIR)/log4cxx.properties: log4cxx.properties
+	cp -f log4cxx.properties $(BIN_DIR)/log4cxx.properties
 
 
 # Create directories. No error if directory already exists
