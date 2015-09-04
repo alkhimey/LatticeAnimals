@@ -4,3 +4,4 @@ obj/
 experimental/fixed10a
 *~
 experimental/Gadi/
+client/*.log
