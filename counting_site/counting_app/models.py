@@ -1,6 +1,7 @@
 import math
 
 from django.db import models
+from django.db.models import Sum
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -34,7 +35,10 @@ class Config(models.Model):
 
     #  num_of_jobs_left.help_text = "Number of jobs that have not be allocated"
 
-
+  def results_totals(self):
+     #Result.objects.filter(job__config = self).   
+    return KeyValueResult.objects.filter(job__config = self).values('key').annotate(Sum('value'))  
+    
   def __str__(self):
     return "%d %d v%s-%d" % (self.n, self.n0, self.client_version, self.algo_id)
 
@@ -62,7 +66,7 @@ class Job(models.Model):
 class KeyValueResult(models.Model):
   job         = models.ForeignKey(Job)
   key         = models.CharField(max_length=32)
-  value       = models.CharField(max_length=128)
+  value       = models.CharField(max_length=32)
 
   def __str__(self):
     return "%s : %s" % (self.key, self.value)
