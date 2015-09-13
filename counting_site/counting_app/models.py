@@ -7,19 +7,40 @@ from django.dispatch import receiver
 
 
 class Config(models.Model):
-  date_created           = models.DateTimeField(auto_now_add=True)
-  date_activated         = models.DateTimeField(null=True)
+  date_created           = models.DateTimeField(auto_now_add=True) # TODO: Use custom save method
+  date_activated         = models.DateTimeField(null=True) # TODO: Consider using only creation date?
   client_version         = models.CharField(max_length=8, help_text = "Which client version this config can communicate with")
   algo_id                = models.IntegerField(help_text = "Which counting algorithm to tell the client to use")
   n                      = models.IntegerField(help_text = "The size of the polyocubes we want to count")
   n0                     = models.IntegerField(help_text = "At which size we want to split the counting")
-  max_id                 = models.IntegerField(help_text = "Total Number of policubes of size n0 without applying predicate. Determined from algo id and n0")
+  max_id                 = models.IntegerField(help_text = "Total Number of policubes of size n0 without applying filter. Determined from algo id and n0")
   num_of_jobs            = models.IntegerField(help_text = "To how many jobs we want to split the counting")
   secret_hash_length     = models.IntegerField(default=32, help_text = "Max is 64")
   minutes_before_realloc = models.IntegerField(default=10, help_text = "Minutes to wait before an unreported job can be reallocated")
     
+  
+  def num_of_jobs_allocated(self):
+    return self.job_set.filter(date_reported = None).exclude(date_allocated = None).count()
+
+    #  num_of_jobs_allocated.help_text = "Number of jobs that were allocated but are not reported yet"
+
+  def num_of_jobs_complete(self):
+    return self.job_set.exclude(date_reported = None).count()
+
+    #  num_of_jobs_complete.help_text = "Number of jobs that have been reported"
+
+  def num_of_jobs_left(self):
+    return self.job_set.filter(date_allocated = None).count()
+
+    #  num_of_jobs_left.help_text = "Number of jobs that have not be allocated"
+
+
   def __str__(self):
     return "%d %d v%s-%d" % (self.n, self.n0, self.client_version, self.algo_id)
+
+
+
+
 
 class Job(models.Model):
   config         = models.ForeignKey(Config)
@@ -38,21 +59,22 @@ class Job(models.Model):
     return "%d %d [%d..%d]" % (self.config.n, self.config.n0, self.low_id, self.high_id)
 
 
-class ResultCounter(models.Model):
-  config      =  models.ForeignKey(Config)
-  size        =  models.IntegerField()
-  accamulator =  models.IntegerField(default=0)
+class KeyValueResult(models.Model):
+  job         = models.ForeignKey(Job)
+  key         = models.CharField(max_length=32)
+  value       = models.CharField(max_length=128)
 
   def __str__(self):
-    return "%d : %d" % (self.size, self.accamulator)
+    return "%s : %s" % (self.key, self.value)
 
 
 
 
 
 @receiver(post_save, sender=Config)
-def create_jobs_and_result_counters(sender, instance, created, **kwargs):
-  """Create a jobs and result counters whenever a new config is created"""
+def create_jobs(sender, instance, created, **kwargs):
+  """Create a jobs  whenever a new config is created"""
+
   if created: 
     size = int(math.ceil(float(instance.max_id) / instance.num_of_jobs))
 
@@ -61,8 +83,3 @@ def create_jobs_and_result_counters(sender, instance, created, **kwargs):
               low_id  = size*(i-1), 
               high_id = min(size*i, instance.max_id))
       j.save()
-
-    for i in range(instance.n0, instance.n + 1):
-      r = ResultCounter(size = i, config = instance)
-      r.save()
-

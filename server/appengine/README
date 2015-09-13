@@ -1,8 +1,0 @@
-This is the server side of the distributed counting.
-We use google app engine for hosting.
-
-Here are few hints if you want to host a version of this app yourself:
-1. Create an app engine account.
-2. Cahnge 'application' attribute in 'app.yaml' file to the name of your application.
-3. Download the python SDK.
-4. Upload this directory using the command './appcfg.py update /path/to/dir' 

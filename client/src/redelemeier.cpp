@@ -243,16 +243,6 @@ void recursiveCountV2(CellStack& p, CellSet untried, unsigned int n,
 		p.push_back(*(untried.begin()));
 		untried.erase(untried.begin());
 
-
-		// TODO: Artium DEBUG
-		static int x4 = 1;
-		if(p.size() == 4) {
-		  cout << x4 << "/86" << endl;
-		  x4++;
-		} 
-		////
-
-
 		// Count only polyominoes that match the predicate and are in the search range //
 		if(pred(p) && p.size() >= n0 && curr_id >= low_id && curr_id < hight_id) {
 			(*mycount)[p.size()]++;

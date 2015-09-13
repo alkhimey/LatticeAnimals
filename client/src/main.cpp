@@ -228,6 +228,7 @@ void usage(string app_name) {
 void parseCmdParams(int argc, char* argv[], string *host, int *portno, unsigned int *n, unsigned int *n0, 
 		    count_t *lowId, count_t *hightId, int *algo_id, string* dump_file_name) {
 
+  //LOG4CXX_INFO(logger, "Command line: " << (*argv)); // TODO: Print command line to log
   LOG4CXX_INFO(logger, "Parsing command line parameters...");
   GetOpt_pp ops(argc, argv);
   ops.exceptions_all(); 
@@ -334,9 +335,8 @@ bool getJobFromServer(string host, int portno,  string *secret, int* algo_id, un
 
 void reportResultsToServer(string host, int portno, string secret, count_t lowId, count_t hightId, vector<count_t> mycount, double cpuTime) {
 
-  bool temp = false; // TODO: Remove
 
-  LOG4CXX_ERROR(logger, "Reporting results to the server...");
+  LOG4CXX_INFO(logger, "Reporting results to the server...");
 
   stringstream req;
   req << REPORT_PAGE << "?secret=" << secret << "&low=" << lowId << "&hight=" << hightId << "&cpu=" << cpuTime << "&res=";
@@ -344,22 +344,15 @@ void reportResultsToServer(string host, int portno, string secret, count_t lowId
   while(mycount[i] == 0)
     i++;
   for(; i < mycount.size(); i++) {
-    temp = true;
     req << i << ":" << mycount[i];
     if(i < mycount.size() - 1) {
       req << "+";
     }
   }
 
-  // TODO: Remove
-  if (!temp || mycount.size() < 11) {
-    cout << "!!!!!!!!!!!!!!!" << secret << " " << lowId << " "<<hightId << endl;
-      exit(0);
-  }
-
   httpGet(host.c_str(), req.str().c_str(), portno);
 
-  LOG4CXX_ERROR(logger, "Finished reporting results");
+  LOG4CXX_INFO(logger, "Finished reporting results");
 
 }
 
