@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.forms import BaseInlineFormSet
 from counting_app.models import Config,Job, KeyValueResult
 
 @admin.register(Job, KeyValueResult)
@@ -13,35 +14,56 @@ class ReadOnlyModelAdmin(admin.ModelAdmin):
                 [field.name for field in self.opts.local_many_to_many]
             ))
 
+class LimitObjectsFormSet(BaseInlineFormSet): 
+
+    def get_queryset(self) :
+        qs = super(LimitObjectsFormSet, self).get_queryset()
+        return qs[:5]
+
 class ReadOnlyTabularInlineJob(admin.TabularInline):
     model = Job
     extra = 0
+    formset = LimitObjectsFormSet
+    can_delete = False
 
-    """ Job and KeyValueResult models are read only in the admin view """
-    def get_readonly_fields(self, request, obj=None):
-        if self.declared_fieldsets:
-            return flatten_fieldsets(self.declared_fieldsets)
-        else:
-            return list(set(
-                [field.name for field in self.opts.local_fields] +
-                [field.name for field in self.opts.local_many_to_many]
-            ))
+    fields =  [ "low_id", "high_id", "date_allocated", "date_reported", "cpu_time", "ip_allocated", "results", "secret_hash" ]
+    readonly_fields = fields
 
 
 class LastReportsInline(ReadOnlyTabularInlineJob):
-    def queryset(self, request):
-        qs = super(MyModelAdmin, self).queryset(request)
-        return qs.order_by('-date_reported')[3]
+    ordering = ("-date_reported",)
+    verbose_name_plural = "Latest Reported Jobs"
 
+
+class LastAllocationsInline(ReadOnlyTabularInlineJob):
+    ordering = ("-date_allocated",)
+    verbose_name_plural = "Latest Allocated Jobs"
+
+
+
+"""
+class ResultsInlnie(admin.TabularInline):
+    model = KeyValueResult
+    extra = 0
+    formset = LimitObjectsFormSet
+    can_delete = False
+
+    fields =  [ "key", "value"]
+    readonly_fields = fields
+
+    def get_queryset(self) :
+        qs = super(LimitObjectsFormSet, self).get_queryset()
+        return qs
+"""
 
 
 @admin.register(Config)
 class ConfigAdmin(admin.ModelAdmin):
-    list_display = ( 'n', 'n0', 'algo_id', 'client_version', 'date_activated', 'num_of_jobs_left', 'num_of_jobs_allocated', 'num_of_jobs_complete' )
+    list_display = ( 'n', 'n0', 'algo_id', 'result_for_n',  'client_version', 'date_activated', 'num_of_jobs_left', 'num_of_jobs_allocated', 'num_of_jobs_complete' )
+    list_display_links = list_display
+    readonly_fields = [ 'date_created', 'num_of_jobs_left', 'num_of_jobs_allocated', 'num_of_jobs_complete', 'results_totals', 'total_jobs' ]
 
-    readonly_fields = [ 'date_created', 'num_of_jobs_left', 'num_of_jobs_allocated', 'num_of_jobs_complete', 'results_totals' ]
-
-    inlines = [ LastReportsInline, ]
+    inlines = [ LastAllocationsInline, LastReportsInline, ]
 
     fieldsets = [
         ('Confiiguration',   
@@ -49,20 +71,14 @@ class ConfigAdmin(admin.ModelAdmin):
           'classes': []}),
         
         ('Progress',         
-         {'fields' : ['num_of_jobs_left', 'num_of_jobs_allocated', 'num_of_jobs_complete', 'num_of_jobs', 'results_totals'], 
+         {'fields' : ['num_of_jobs_left', 'num_of_jobs_allocated', 'num_of_jobs_complete', 'total_jobs', 'results_totals'], ## TODO: total num of jobs readonly
           'classes': []}), # collapse class? or use grappeli
     ]
 
-#    def get_readonly_fields(self, request, obj=None):
-#        if obj: # editing an existing object
-#            return self.readonly_fields + ('n', 'n0')
-#        return self.readonly_fields
 
-
-
-
-
-#class ResultsAggInline(admin.TabularInline):
+    def total_jobs(self, obj):
+        """ Used to display as read only in "Progress" fieldset """
+        return obj.num_of_jobs
 
 
 

@@ -23,22 +23,23 @@ class Config(models.Model):
   def num_of_jobs_allocated(self):
     return self.job_set.filter(date_reported = None).exclude(date_allocated = None).count()
 
-    #  num_of_jobs_allocated.help_text = "Number of jobs that were allocated but are not reported yet"
-
   def num_of_jobs_complete(self):
     return self.job_set.exclude(date_reported = None).count()
-
-    #  num_of_jobs_complete.help_text = "Number of jobs that have been reported"
 
   def num_of_jobs_left(self):
     return self.job_set.filter(date_allocated = None).count()
 
-    #  num_of_jobs_left.help_text = "Number of jobs that have not be allocated"
-
   def results_totals(self):
-     #Result.objects.filter(job__config = self).   
     return KeyValueResult.objects.filter(job__config = self).values('key').annotate(Sum('value'))  
     
+  def result_for_n(self):
+    """ Result for the highest counted value """
+    p =  self.results_totals().filter(key = self.n)
+    if len(p):
+      return p[0]['value__sum']
+    else:
+      return 0
+
   def __str__(self):
     return "%d %d v%s-%d" % (self.n, self.n0, self.client_version, self.algo_id)
 

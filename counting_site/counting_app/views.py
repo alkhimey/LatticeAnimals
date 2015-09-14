@@ -67,12 +67,8 @@ def report(request):
     
   # Parse the result and create result key value pair objects
   for r in [x for x in request.GET.get('res', u'').split(u' ') if x != u'']:
-    print r
-
     x = r.split(u':')
     
-    print x[0], x[1]
-
     kvr = KeyValueResult(job   = j,
                          key   = x[0],
                          value = x[1])
