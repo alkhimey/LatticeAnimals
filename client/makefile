@@ -1,30 +1,62 @@
+# Build the project by calling:
+# 
+# make CFG=release PLAT=linux
+# 
+# CFG can be "debug" (default) or "release".
+# PLAT can be "linux" (default) or "windows".
+#
+#
 
+
+
+# Compiler related common configurations
+#
+CC_FLAGS := -c -MMD -MP -Wall -std=c++0x
+LD_FLAGS=
+LD_LIBS= -llog4cxx
+
+
+
+# makefile commands line parameters
+#
+ifeq ($(PLAT), windows)
+
+CXX=i586-mingw32msvc-g++
+SUFFIX := win
+LD_LIBS += -lws2_32
+
+else
+
+CXX=g++
+SUFFIX := linux
+
+endif
+
+
+ifeq ($(CFG), release)
+
+CC_FLAGS += -g -O3 -DNDEBUG
+LD_FLAGS += -DNDEBUG
+SUFFIX := $(SUFFIX)_release
+
+else
+
+CC_FLAGS += -g -D_GLIBCXX_DEBUG
+SUFFIX:=$(SUFFIX)_debug
+
+endif
+
+
+
+
+# Path related configurations
+#
 SRC_DIR=src
 SRCS=$(wildcard $(SRC_DIR)/*.cpp)
 UNIT_TESTS_DIR=unit_tests
 UNIT_TESTS_SRCS=$(wildcard $(UNIT_TESTS_DIR)/*.cpp)
 OBJ_DIR=obj
 BIN_DIR=bin
-
-#linux_debug: CXX=g++
-#linux_debug: CC_FLAGS=-c -Wall -g
-#linux_debug: LD_FLAGS=
-#linux_debug: SUFFIX=linux_debug
-#linux_debug: EXE=$(BIN_DIR)/run_$(SUFFIX)
-#linux_debug: OBJS=$(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%_$(SUFFIX).o)
-
-#linux_debug: dirs $(EXE)
-
-
-
-CXX=g++
-CC_FLAGS=-c -MMD -MP -Wall -std=c++0x -DNDEBUG
-#UNIT_TESTS_CC_FLAGS=-c -MMD -MP -Wall -std=c++0x -g -D_GLIBCXX_DEBUG
-LD_FLAGS= -DNDEBUG 
-#UNIT_TESTS_LD_FLAGS=-g -D_GLIBCXX_DEBUG
-
-LD_LIBS= -llog4cxx
-SUFFIX=linux_debug
 
 EXE=$(BIN_DIR)/run_$(SUFFIX)
 UNIT_TESTS_EXE=$(BIN_DIR)/unit_tests_$(SUFFIX)
@@ -34,12 +66,10 @@ OBJS_WITHOUT_MAIN=$(filter-out $(OBJ_DIR)/main_$(SUFFIX).o, $(OBJS))
 UNIT_TESTS_OBJS=$(UNIT_TESTS_SRCS:$(UNIT_TESTS_DIR)/%.cpp=$(OBJ_DIR)/$(UNIT_TESTS_DIR)/%_$(SUFFIX).o)
 
 
-.PHONY: all clean #linux_debug
 
-
+.PHONY: all clean
 
 all: dirs $(BIN_DIR)/log4cxx.properties $(EXE) $(UNIT_TESTS_EXE)
-
 
 # Link only if dependency changed
 #
