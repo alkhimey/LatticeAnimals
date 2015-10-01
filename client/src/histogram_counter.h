@@ -1,10 +1,8 @@
 #ifndef HISTOGRAM_COUNTER_H
 #define HISTOGRAM_COUNTER_H
 
-#include "logging.h"
-#include "simple_counter.h"
 
-class HistogramCounter : public SimpleCounter {
+class HistogramCounter  {
 
 protected:
   
@@ -12,7 +10,7 @@ protected:
   
 public:
 
- HistogramCounter(coord_t max_n, dim_t d) : SimpleCounter(max_n, d) {
+ HistogramCounter(coord_t max_n, dim_t d) {
     _counter_histo = std::vector< std::vector <count_t > >(max_n + 1);
 
     for(coord_t i = 0; i < (coord_t)_counter_histo.size(); i++) {
@@ -27,28 +25,16 @@ public:
   }
 
 
-  void output_to_log(void) const {
-    
-    LOG4CXX_INFO(logger, "Printing results...");
-    LOG4CXX_INFO(logger, "n\tcount\t#polyominoes");
+  void write_results_to_map(std::map< std::string, count_t > *results) { 
 
-    
-    for(coord_t i = 0; i < (coord_t)_counter_histo.size(); i++) {
-
-      count_t j = 0;
-      
-      // Ignore leading zeros
-      while (_counter_histo[i][j] == 0 && j < _counter_histo[i].size() ) {
-	j++;
-	}
-
-      for(; j < _counter_histo[i].size(); j++) {
-	LOG4CXX_INFO(logger, i << "\t" << j  << "\t" << _counter_histo[i][j] ); 
+    for(coord_t i = 0; i < (coord_t)_counter_histo.size(); i++) { 
+      for(count_t j = 0; j < _counter_histo[i].size(); j++) {
+	std::stringstream sstr;
+	sstr << i << "," << j;      
+	(*results)[sstr.str()] = _counter_histo[i][j];
       }
     }
   }
-
-
 };
 
 

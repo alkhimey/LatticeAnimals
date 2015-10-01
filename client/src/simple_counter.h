@@ -1,7 +1,9 @@
 #ifndef SIMPLE_COUNTER_H
 #define SIMPLE_COUNTER_H
 
-#include "logging.h"
+#include <string>
+#include <sstream>
+
 
 class SimpleCounter {
 
@@ -21,31 +23,14 @@ public:
     _counter_table[n] += c;
   }
 
-
-  void output_to_log(void) const {
-    
-    LOG4CXX_INFO(logger, "Printing results...");
+  void write_results_to_map(std::map< std::string, count_t > *results) { 
 
     for(count_t i = 0; i < _counter_table.size(); i++) {
-      LOG4CXX_INFO(logger, "Result for " << i << "\t" << "is " << _counter_table[i]); 
+      std::stringstream sstr;
+      sstr << i;      
+      (*results)[sstr.str()] = _counter_table[i];
     }
   }
-
-  
-  /**
-   * @pre Size of vector count_v is equal to max_n supplied on the counter instansiation (n+1)
-   *
-   */
-  void output_to_vector(std::vector< count_t>* count_vect) const {
-    
-    assert(count_vect != NULL);
-    assert((*count_vect).size() == _counter_table.size());
-    
-    for(count_t i = 0; i < _counter_table.size(); i++) {
-      (*count_vect)[i] = _counter_table[i];
-    }
-  }
-
 };
 
 

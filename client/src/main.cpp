@@ -4,24 +4,28 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <map>
 #include <sstream>
 #include <stdlib.h>
 #include <stdio.h>
-#include <time.h>
 #include <vector>
+#include <queue>
 #include <utility>
+
 #include "getopt_pp.h"
-#include "redelemeier.h"
+#include "alphanum.hpp"
+#include "timing.hpp"
+#include "logging.h"
 #include "simplehttp.h"
+
+#include "redelemeier.h"
 #include "counting_algorithm.h"
 #include "convex_counter.h"
 #include "wc_lattice_animal.h"
 #include "adj_count_lattice_animal.h"
-
 #include "simple_counter.h"
 #include "histogram_counter.h"
 
-#include "logging.h"
 #include "main.h"
 
 
@@ -49,9 +53,9 @@ vector< pair< string, CountingAlgorithm > > ALGORITHMS = {
   make_pair("weakly convex fixed 4d", redelemeier_main<WeaklyConvexLatticeAnimal, SimpleCounter, 4>),
   make_pair("weakly convex fixed 5d", redelemeier_main<WeaklyConvexLatticeAnimal, SimpleCounter, 5>),
 
-  make_pair("trivial redelemeier 3d (obsolete)", redelemeier_recursive_3d),
-  make_pair("trivial redelemeier weak convex 3d  (obsolete)", redelemeier_3d_line_convex),
-  make_pair("trivial redelemeier strong convex 3d (obsolete)", redelemeier_3d_full_convex),
+  //  make_pair("trivial redelemeier 3d (obsolete)", redelemeier_recursive_3d),
+  //  make_pair("trivial redelemeier weak convex 3d  (obsolete)", redelemeier_3d_line_convex),
+  // make_pair("trivial redelemeier strong convex 3d (obsolete)", redelemeier_3d_full_convex),
 
   make_pair("count total adjacent cells 2d", redelemeier_main<AdjCountLatticeAnimal, SimpleCounter, 2>),
   make_pair("count total adjacent cells 3d", redelemeier_main<AdjCountLatticeAnimal, SimpleCounter, 3>),
@@ -130,23 +134,23 @@ int main(int argc, char* argv[]){
 
     LOG4CXX_INFO(logger, "Running algorithm \"" << ALGORITHMS[algo_id].first << "\"...");
     
-    vector<count_t> results = vector<count_t>(n + 1, 0);
-    clock_t c0, c1;
-    c0 = clock();
-
-    ALGORITHMS[algo_id].second(n, n0, lowId, hightId, &results, &dump_file);    
-
-    c1 = clock();
-    double t = (c1-c0)/ (double) CLOCKS_PER_SEC;		
+    std::map<std::string, count_t> results;
     
+    double t0 = get_cpu_time();
+    
+    ALGORITHMS[algo_id].second(n, n0, lowId, hightId, &results, &dump_file);    
+    
+    double t1 = get_cpu_time();
+
     dump_file.close();
 
+    LOG4CXX_INFO(logger, "Finished running algorithm. This took " << t1 - t0 << " cpu time");
+
     printResults(results);
-    LOG4CXX_INFO(logger, "Finished running algorithm");
     
     /* If we need to report result back to server */
     if(host != "") {
-      reportResultsToServer(host, portno,  secret, lowId, hightId, results, t);
+      reportResultsToServer(host, portno,  secret, lowId, hightId, results, t1-t0);
     } else {
       break;
     }
@@ -333,21 +337,19 @@ bool getJobFromServer(string host, int portno,  string *secret, int* algo_id, un
   return true;
 }
 
-void reportResultsToServer(string host, int portno, string secret, count_t lowId, count_t hightId, vector<count_t> mycount, double cpuTime) {
-
+void reportResultsToServer(string host, int portno, string secret, count_t lowId, count_t hightId, std::map< std::string, count_t > results, double cpuTime) {
 
   LOG4CXX_INFO(logger, "Reporting results to the server...");
 
   stringstream req;
   req << REPORT_PAGE << "?secret=" << secret << "&low=" << lowId << "&hight=" << hightId << "&cpu=" << cpuTime << "&res=";
-  unsigned int i = 0;
-  while(mycount[i] == 0)
-    i++;
-  for(; i < mycount.size(); i++) {
-    req << i << ":" << mycount[i];
-    if(i < mycount.size() - 1) {
+
+  for (std::map<std::string, count_t>::iterator i = results.begin(); i != results.end(); i++) {
+    if (i != results.begin()) {
       req << "+";
     }
+
+    req << i->first << ":" << i->second;
   }
 
   httpGet(host.c_str(), req.str().c_str(), portno);
@@ -356,17 +358,19 @@ void reportResultsToServer(string host, int portno, string secret, count_t lowId
 
 }
 
-void printResults(vector<count_t> mycount) {
-  unsigned int i = 0;
 
-  while(mycount[i] == 0)
-    i++;
-  for(; i < mycount.size(); i++) {
-    if(logger == NULL) {
-      cout << i << "\t" << mycount[i] << endl;
-    } else {
-      LOG4CXX_INFO(logger, "Result for " << i << "\t is " << mycount[i]);
-    }
+void printResults(std::map<std::string, count_t> results) {
+
+  std::priority_queue < std::string, std::vector< std::string >, doj::alphanum_great< std::string > > q;
+
+  for (std::map<std::string, count_t>::iterator i = results.begin(); i != results.end(); i++) {
+    q.push(i->first);
   }
+
+  while(q.empty() == false) {
+    LOG4CXX_INFO(logger, "Result for " << q.top() << "\t is " << results[q.top()]);
+    q.pop();
+  }
+  
 }
 

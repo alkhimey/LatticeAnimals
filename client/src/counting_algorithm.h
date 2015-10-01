@@ -2,6 +2,8 @@
 #define _COUNTING_ALGORITHM_H_
 
 #include <vector>
+#include <string>
+#include <map>
 #include <list>
 #include <fstream>
 #include "basic_types.h"
@@ -14,26 +16,24 @@
  * @param n0		
  * @param low_id	
  * @param high_id	
- * @param results 	The results of the count stored by size. Relevant only for sizes between n0 and n.
+ * @results             
  * @param dump_file     Pointer to the dump stream. The stream should be already open for writing. If stream is
  *                      open, the algortihm should dump all the polycubes that it has counted.
  */ 
 typedef void (*CountingAlgorithm) (coord_t n,
-				   // dim_t d,
 				   coord_t n0,
 				   count_t low_id,
 				   count_t  high_id,
-				   std::vector<count_t>* results,
+				   std::map< std::string, count_t > *results,
 				   std::ofstream* dump_file);
 
 
 template <class A, class C, dim_t D>
 void redelemeier_main (coord_t n,
-		       //dim_t d,
 		       coord_t n0,
 		       count_t low_id,
 		       count_t  high_id,
-		       std::vector<count_t>* results,
+		       std::map< std::string, count_t > *results,
 		       std::ofstream* dump_file)
 {
 
@@ -44,7 +44,7 @@ void redelemeier_main (coord_t n,
   count_t curr_id = 0;
   std::list< index_t > untried = a.get_new_untried();
 
-  counter.increment(a.size(), a.get_count());
+  counter.increment(a.size(), a.get_count()); // count the origin
 
   redelemeier_recursive(a,
 			untried,
@@ -57,13 +57,8 @@ void redelemeier_main (coord_t n,
 
   a.pop();
 
-  // Write results to the logger
-  counter.output_to_log();
-
-
-  // Return results in raw form
-  counter.output_to_vector(results);
-
+  // Output the results
+  counter.write_results_to_map(results);
 }
 
 
@@ -106,7 +101,7 @@ count_t redelemeier_recursive(A &a,
       
     }
     
-    // Count only those which are in the search range
+    // Count only those which are in the search range and in the counted class.
     if(a.size() >= n0 && curr_id >= low_id && curr_id < high_id && a.is_in_class()) {
       
 
@@ -128,8 +123,8 @@ count_t redelemeier_recursive(A &a,
       
       std::list< index_t > untried_next = std::list< index_t >(untried);
       
-      // add neighbours of c to the untried set
-      // will add only neghbours which are not negibours of p
+      // Add neighbours of c to the untried set.
+      // Will add only neghbours which are not negibours of the lattice animal.
       
       untried_next.splice(untried_next.end(),  a.get_new_untried() );
       
