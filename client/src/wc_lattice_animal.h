@@ -15,7 +15,7 @@
 
 
 /**
- * This class represents a lattice animal on a d-dimensional lattice of maximal size n.
+ * This class represents a weakly convex lattice animal on a d-dimensional lattice of maximal size n.
  */
 class WeaklyConvexLatticeAnimal : public LatticeAnimal {
   
