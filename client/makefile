@@ -18,7 +18,7 @@ BIN_DIR=bin
 
 
 CXX=g++
-CC_FLAGS=-c -MMD -MP -Wall -std=c++0x -DNDEBUG
+CC_FLAGS=-c -MMD -MP -Wall -std=c++0x -DNDEBUG -O3 -g
 #UNIT_TESTS_CC_FLAGS=-c -MMD -MP -Wall -std=c++0x -g -D_GLIBCXX_DEBUG
 LD_FLAGS= -DNDEBUG 
 #UNIT_TESTS_LD_FLAGS=-g -D_GLIBCXX_DEBUG

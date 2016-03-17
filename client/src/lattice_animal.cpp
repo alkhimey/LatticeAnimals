@@ -1,6 +1,5 @@
 #include <assert.h>
 
-
 #include "lattice_animal.h"
 
 /**
@@ -71,36 +70,42 @@ void LatticeAnimal::pop()
 /**
  * @TODO: It is possible to optimize the usage of add especialy if we need sorted list.
  */ 
-std::list< index_t > LatticeAnimal::get_new_untried() const
-{
-  index_t                        last_idx        = _stack.back();
+std::list< index_t > LatticeAnimal::get_new_untried() const {
+  std::list<index_t>  result;
+  ReservedQueue reserved_queue;
+  get_new_untried(&reserved_queue);
+  while (!reserved_queue.IsEmpty()) {
+    result.push_back(reserved_queue.Top());
+    reserved_queue.Pop();
+  }
+  return result;
+}
 
+void LatticeAnimal::  get_new_untried(ReservedQueue* reserved_queue) const {
+  index_t last_idx = _stack.back();
 
-  std::list< index_t >           candidates      = _neighbours[last_idx];
-  std::list< index_t >           result;
-  std::list< index_t >::iterator candidates_iter;
+  const std::list< index_t >* candidates = &_neighbours[last_idx];
+  std::list< index_t >::const_iterator candidates_iter;
 
-  for(candidates_iter = candidates.begin(); candidates_iter != candidates.end(); candidates_iter++) {
+  for(index_t candidate : *candidates) {
   
-    std::list< index_t >           neighs      = _neighbours[*candidates_iter];
-    std::list< index_t >::iterator neigh_iter;
+    const std::list< index_t >* neighs = &_neighbours[candidate];
+    std::list< index_t >::const_iterator neigh_iter;
 
-    if (_lattice[*candidates_iter] == false) {
+    if (_lattice[candidate] == false) {
 
-      for(neigh_iter = neighs.begin(); neigh_iter != neighs.end(); neigh_iter++) {
+      for(neigh_iter = neighs->begin(); neigh_iter != neighs->end(); neigh_iter++) {
     
-	if (_lattice[*neigh_iter] && *neigh_iter != last_idx ) {
-	  break;	
-	}
+        if (_lattice[*neigh_iter] && *neigh_iter != last_idx ) {
+          break;  
+        }
       }
 
-      if( neigh_iter == neighs.end()) {
-	result.push_back(*candidates_iter);
+      if (neigh_iter == neighs->end()) {
+        reserved_queue->Push(candidate);
       }
     }
   }
-
-  return result;
 }
 
 
@@ -114,7 +119,7 @@ void LatticeAnimal::dump(std::ofstream* dump_file)
   }
       
   for(std::vector< index_t >::iterator iter = _stack.begin(); iter !=  _stack.end(); iter++) {
-    (*dump_file) << *iter << " ";
+      (*dump_file) << *iter << " ";
   }
   
   (*dump_file) << std::endl; 

@@ -78,15 +78,19 @@ vector< pair< string, CountingAlgorithm > > ALGORITHMS = {
  * 4. Report results or print them on the screen.
  *
  */
-int main(int argc, char* argv[]){ 
+int main(int argc, char* argv[]){
   string host = "";
   string dump_file_name = "";
-  int portno;
+  // int portno;
   string secret;
   
-  unsigned int n, n0 = 0;
+  unsigned int n = 20, n0 = 0;
   count_t lowId = 0, hightId = 1;
-  int algo_id;
+  int algo_id = 14;
+
+  if (argc == 2) {
+    n = atoi(argv[1]);
+  }
 
   ofstream dump_file;
   
@@ -96,70 +100,71 @@ int main(int argc, char* argv[]){
 
   LOG4CXX_INFO(logger, "Starting program. Client version: " << CLIENT_VERSION);
 
-  parseCmdParams(argc, argv, &host,&portno, &n, &n0, &lowId, &hightId, &algo_id, &dump_file_name);
+  // parseCmdParams(argc, argv, &host,&portno, &n, &n0, &lowId, &hightId, &algo_id, &dump_file_name);
   
   /* Main loop (only one iteration if host is not present) */
-  while(true) {
+ //  while(true) {
  
-    /* If we need to get more parameters from server */
-    if(host != "") {
-      if(getJobFromServer(host, portno, &secret, &algo_id, &n, &n0, &lowId, &hightId) == false) {
-	break;
-      }
-    }
+ //    /* If we need to get more parameters from server */
+ //    if(host != "") {
+ //      if(getJobFromServer(host, portno, &secret, &algo_id, &n, &n0, &lowId, &hightId) == false) {
+	// break;
+ //      }
+ //    }
     
-    if(algo_id >= (int)ALGORITHMS.size()) {
-      LOG4CXX_ERROR(logger, "Client does not support alogrithm id " << algo_id);
-      exit(0);
-    }
+ //    if(algo_id >= (int)ALGORITHMS.size()) {
+ //      LOG4CXX_ERROR(logger, "Client does not support alogrithm id " << algo_id);
+ //      exit(0);
+ //    }
 
-    if(n < n0) {
-      LOG4CXX_ERROR(logger, "n=" << n << " can't be lower than " << "n0=" << n0); 
-      exit(0);
-    }
+ //    if(n < n0) {
+ //      LOG4CXX_ERROR(logger, "n=" << n << " can't be lower than " << "n0=" << n0); 
+ //      exit(0);
+ //    }
 
-    if (dump_file_name != "") {
-      LOG4CXX_INFO(logger, "Attempting to open dump file " << dump_file_name);
-      dump_file.open(dump_file_name.c_str());
-      if (dump_file.fail()) {
-	LOG4CXX_WARN(logger, "Could not open dump file " << dump_file_name);
-      } else {
-	LOG4CXX_INFO(logger, "Opened dump file "<< dump_file_name <<" succesfully");
-      }
-    }
+ //    if (dump_file_name != "") {
+ //      LOG4CXX_INFO(logger, "Attempting to open dump file " << dump_file_name);
+ //      dump_file.open(dump_file_name.c_str());
+ //      if (dump_file.fail()) {
+	// LOG4CXX_WARN(logger, "Could not open dump file " << dump_file_name);
+ //      } else {
+	// LOG4CXX_INFO(logger, "Opened dump file "<< dump_file_name <<" succesfully");
+ //      }
+ //    }
 
-    LOG4CXX_INFO(logger, "Running algorithm \"" << ALGORITHMS[algo_id].first << "\"...");
-    
-    vector<count_t> results = vector<count_t>(n + 1, 0);
-    clock_t c0, c1;
-    c0 = clock();
-
-    ALGORITHMS[algo_id].second(n, n0, lowId, hightId, &results, &dump_file);    
-
-    c1 = clock();
-    double t = (c1-c0)/ (double) CLOCKS_PER_SEC;		
-    
-    dump_file.close();
-
-    printResults(results);
-    LOG4CXX_INFO(logger, "Finished running algorithm");
-    
-    /* If we need to report result back to server */
-    if(host != "") {
-      reportResultsToServer(host, portno,  secret, lowId, hightId, results, t);
-    } else {
-      break;
-    }
-  }
+  LOG4CXX_INFO(logger, "Running algorithm \"" << ALGORITHMS[algo_id].first << "\"...");
   
-  
-  LOG4CXX_INFO(logger, "Program finished");
+  vector<count_t> results = vector<count_t>(n + 1, 0);
+  // clock_t c0, c1;
+  // c0 = clock();
 
-#if defined (_WIN32)
-  system("pause");
-#endif
-  return 0;
+
+  ALGORITHMS[algo_id].second(n, n0, lowId, hightId, &results, NULL);    
+
+  // c1 = clock();
+  // double t = (c1-c0)/ (double) CLOCKS_PER_SEC;		
+  
+  dump_file.close();
+
+  printResults(results);
+  LOG4CXX_INFO(logger, "Finished running algorithm");
+  
+  /* If we need to report result back to server */
+  // if(host != "") {
+  //   reportResultsToServer(host, portno,  secret, lowId, hightId, results, t);
+  // } else {
+  //   break;
+  // }
 }
+  
+  
+  // LOG4CXX_INFO(logger, "Program finished");
+
+// #if defined (_WIN32)
+//   system("pause");
+// #endif
+//   return 0;
+// }
 
 
 /* Read a word starting at the start pointer, put it into result and return a pointer to a
@@ -181,7 +186,7 @@ char* readNextWord(char* start, string* result) {
 int splitContent(char* content, string* secret, int* algo_id, unsigned int* n, unsigned int* n0, count_t* lowId, count_t* hightId) {
   content = readNextWord(content, secret);
   
-  if(sscanf(content, "%d %d %d %llu %llu", algo_id, n, n0, lowId, hightId) != 5)
+  if(sscanf(content, "%d %d %d %llu %llu", algo_id, n, n0, (unsigned long long*) lowId, (unsigned long long*) hightId) != 5)
     return 0;
   
   return 1;
@@ -193,8 +198,8 @@ int parseU(const char* s, unsigned int* u) {
 }
 
 
-int parseUll(const char* s, unsigned long long int* ull) {
-  return sscanf(s, "%llu", ull) == 1;
+int parseUll(const char* s, uint64_t* ull) {
+  return sscanf(s, "%llu", (unsigned long long*) ull) == 1;
 }
 
 
@@ -230,7 +235,7 @@ void parseCmdParams(int argc, char* argv[], string *host, int *portno, unsigned 
 
   LOG4CXX_INFO(logger, "Parsing command line parameters...");
   GetOpt_pp ops(argc, argv);
-  ops.exceptions_all(); 
+  ops.exceptions_all();
   bool success = true;
   try {
     // TODO: It is possible to rearrange some stuff here.
@@ -357,7 +362,7 @@ void reportResultsToServer(string host, int portno, string secret, count_t lowId
       exit(0);
   }
 
-  httpGet(host.c_str(), req.str().c_str(), portno);
+  // httpGet(host.c_str(), req.str().c_str(), portno);
 
   LOG4CXX_ERROR(logger, "Finished reporting results");
 
@@ -366,8 +371,9 @@ void reportResultsToServer(string host, int portno, string secret, count_t lowId
 void printResults(vector<count_t> mycount) {
   unsigned int i = 0;
 
-  while(mycount[i] == 0)
+  while (i < mycount.size() && mycount[i] == 0) {
     i++;
+  }
   for(; i < mycount.size(); i++) {
     if(logger == NULL) {
       cout << i << "\t" << mycount[i] << endl;

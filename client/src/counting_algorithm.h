@@ -1,12 +1,14 @@
 #ifndef _COUNTING_ALGORITHM_H_
 #define _COUNTING_ALGORITHM_H_
 
+#include <iostream>
+#include <time.h>
 #include <vector>
-#include <list>
 #include <fstream>
 #include "basic_types.h"
 #include "lattice_animal.h"
 #include "logging.h"
+#include "reserved_queue.h"
 
 /* Prototype for a counting algorthim entry point 
  * 
@@ -26,7 +28,6 @@ typedef void (*CountingAlgorithm) (coord_t n,
 				   std::vector<count_t>* results,
 				   std::ofstream* dump_file);
 
-
 template <class A, class C, dim_t D>
 void redelemeier_main (coord_t n,
 		       //dim_t d,
@@ -37,17 +38,18 @@ void redelemeier_main (coord_t n,
 		       std::ofstream* dump_file)
 {
 
+  clock_t timer = clock();
   C counter(n, D);
   A a(D,n);
   a.add(a.get_origin()); // add the origin
-    
-  count_t curr_id = 0;
-  std::list< index_t > untried = a.get_new_untried();
-
   counter.increment(a.size(), a.get_count());
+  count_t curr_id = 0;
+  ReservedQueue untried_queue;
+  a.get_new_untried(&untried_queue);
+
 
   redelemeier_recursive(a,
-			untried,
+			&untried_queue,
 			n0,
 			low_id, 
 			high_id,
@@ -62,17 +64,16 @@ void redelemeier_main (coord_t n,
 
 
   // Return results in raw form
-  counter.output_to_vector(results);
+  // counter.output_to_vector(results);
+  double total_time = (clock() - timer) / ((float) CLOCKS_PER_SEC);
+  std::cout << "total time: " << total_time << std::endl;
 
 }
 
 
-
-
-
 template <class A, class C>
 count_t redelemeier_recursive(A &a,
-			      std::list< index_t > &untried,
+			      ReservedQueue* untried_queue,
 			      coord_t n0,
 			      count_t low_id,
 			      count_t  high_id,
@@ -80,74 +81,64 @@ count_t redelemeier_recursive(A &a,
 			      C &counter,
 			      std::ofstream* dump_file) {
 
-  
-  std::list< index_t >::iterator iter = untried.begin();
-  
+  static std::vector<ReservedQueue> queue_stack(100);
+  static size_t queue_stack_index = 0;
+  static double recursion_counter = 0;
+  static int num_incs = 0;
 
+  while(!untried_queue->IsEmpty()) {
 
-  while(iter != untried.end()) {      
-
-    if(curr_id >= high_id) {
-      return curr_id;
-    }
-    
-    index_t c = *iter;
-    
-    // Add cell into the new lattice animal only if the lattice animal is in the counted class.
-    if (a.can_add(c)) {
-
-      a.add(c);
-      iter = untried.erase(iter);
-      
-    } else {
-      
-      iter++;
+    index_t c = untried_queue->Top();
+    untried_queue->Pop();
+    // Cannot add cell into the new lattice animal only if the lattice animal is in the counted class.
+    if (!a.can_add(c)) {
+      std::cout << "cant add\n";
+      exit(1);
       continue;
-      
     }
-    
-    // Count only those which are in the search range
-    if(a.size() >= n0 && curr_id >= low_id && curr_id < high_id && a.is_in_class()) {
-      
+    int a_size;
+    int a_count;
+    if (a.is_almost_full()) {
+      a_size = a.size() + 1;
+      a_count = a.perim_when_added(c);
+    } else {
+      // Add cell into the new lattice animal only if
+      // the lattice animal is in the counted class.
+      a.add(c);
+      a_size = a.size();
+      a_count = a.get_count();
+      // Count only those which are in the search range
 
-      //(*results)[a.size()] += a.get_count();
-      counter.increment(a.size(), a.get_count());
-
-
-      if (dump_file != NULL) {
-	a.dump(dump_file);
+      if (unlikely(queue_stack.size() == queue_stack_index)) {
+        queue_stack.resize(queue_stack.size() * 2);
       }
+      ReservedQueue* untried_next = &queue_stack[queue_stack_index];
+      ++queue_stack_index;
+      untried_next->Clear();
+      untried_next->CopyQueue(*untried_queue);
 
-    }
-    
-    if(a.size() < n0 || 
-       (a.size() >= n0       && 
-	a.is_full() == false && 
-	curr_id >= low_id    && 
-	curr_id < high_id) ) {
-      
-      std::list< index_t > untried_next = std::list< index_t >(untried);
-      
       // add neighbours of c to the untried set
-      // will add only neghbours which are not negibours of p
-      
-      untried_next.splice(untried_next.end(),  a.get_new_untried() );
-      
-      curr_id = redelemeier_recursive(a,
-				      untried_next,
-				      n0,
-				      low_id, 
-				      high_id,
-				      curr_id,
-				      counter,
-				      dump_file); 
-    }
-    
+      // will add only neighbours which are not neighbours of p
 
-    if(a.size() == n0) 
-      curr_id++;
-    
-    a.pop();
+      a.get_new_untried(untried_next);
+
+      curr_id = redelemeier_recursive(a,
+       				        untried_next,
+                		  n0,
+                		  low_id,
+                		  high_id,
+                		  curr_id,
+                		  counter,
+                		  dump_file);
+    --queue_stack_index;
+      a.pop();
+    }
+    counter.increment(a_size, a_count);
+  }
+  if (a.size() == 1) {
+    std::cout << "recursion time: " << recursion_counter << std::endl;
+    std::cout << "num_incs: " << num_incs << std::endl;
+
   }
 
   return curr_id;

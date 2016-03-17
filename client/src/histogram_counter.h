@@ -1,6 +1,7 @@
 #ifndef HISTOGRAM_COUNTER_H
 #define HISTOGRAM_COUNTER_H
 
+#include <iostream>
 #include "logging.h"
 #include "simple_counter.h"
 
@@ -22,7 +23,7 @@ public:
     }
   }
 
-  void increment(coord_t n, count_t c) {
+  void inline increment(coord_t n, count_t c) {
     _counter_histo[n][c] += 1;
   }
 
@@ -33,17 +34,19 @@ public:
     LOG4CXX_INFO(logger, "n\tcount\t#polyominoes");
 
     
-    for(coord_t i = 0; i < (coord_t)_counter_histo.size(); i++) {
+    for(coord_t i = 0; i < (coord_t) _counter_histo.size(); i++) {
 
       count_t j = 0;
       
       // Ignore leading zeros
-      while (_counter_histo[i][j] == 0 && j < _counter_histo[i].size() ) {
-	j++;
-	}
+      while (j < _counter_histo[i].size() &&
+             _counter_histo[i][j] == 0) {
+    	 j++;
+    	}
 
       for(; j < _counter_histo[i].size(); j++) {
-	LOG4CXX_INFO(logger, i << "\t" << j  << "\t" << _counter_histo[i][j] ); 
+	       LOG4CXX_INFO(logger, i << "\t" << j  << "\t" <<
+                             _counter_histo[i][j]);
       }
     }
   }

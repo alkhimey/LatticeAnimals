@@ -1,6 +1,7 @@
 #ifndef LATTICE_ANIMAL_H_
 #define LATTICE_ANIMAL_H_
 
+#include <iostream>
 #include <vector>
 #include <list>
 #include <utility>
@@ -9,7 +10,7 @@
 #include <fstream>
 
 #include "basic_types.h"
-
+#include "reserved_queue.h"
 
 
 /**
@@ -35,7 +36,7 @@ protected:
   coord_t _n;
   coord_t _dim_size;
   
-  std::vector<bool>                _lattice;          /// size of the lattice is n**d
+  std::vector<int>                _lattice;          /// size of the lattice is n**d
 
   std::vector< index_t >           _stack;
 
@@ -68,7 +69,7 @@ public:
     _n = n;
     _dim_size =  2 * _n -1;
 
-    _lattice = std::vector<bool>( pow_nd( _dim_size , _d ), false );
+    _lattice = std::vector<int>( pow_nd( _dim_size , _d ), false );
 
     _index_to_coord = std::vector< std::vector< coord_t > >(_lattice.size());
     _neighbours     =  std::vector< std::list< index_t > >(_lattice.size());
@@ -217,6 +218,8 @@ public:
    */
   void add(const index_t idx);
 
+  int perim_when_added(index_t idx) { return 0; }
+
   /**
    * Get the index of the origin cell
    * @return The index of the origin cell.
@@ -251,12 +254,13 @@ public:
    *
    */
   std::list< index_t > get_new_untried() const;
+  void get_new_untried(ReservedQueue* reserved_queue) const;
 
   /** 
    * @return true if the current number of cells of the lattice animall. 
    *         This does NOT return the number of cells allocated for the lattice. 
    */
-  coord_t size() const {
+  coord_t inline size() const {
     return _stack.size();
   }
 
@@ -266,6 +270,11 @@ public:
   bool is_full() const {
     assert(size() <= _n);
     return size() == _n;
+  }
+
+  bool is_almost_full() const {
+    assert(size() <= _n);
+    return size() == _n - 1;
   }
 
 

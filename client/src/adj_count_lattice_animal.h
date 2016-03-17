@@ -42,7 +42,7 @@ protected:
    *  Includes neighboures that are invalid cells. 
    * Does not include neighbours that outside the lattice boundary.
    */
-  std::vector< std::list< index_t > >    _comp_neighbours;
+  std::vector< std::vector< index_t > >    _comp_neighbours;
 
 public:
   
@@ -50,14 +50,14 @@ public:
     
     _adj_total = 0;
     _neig_count_lattice = std::vector<count_t>(_lattice.size(),0);
-    _comp_neighbours         =  std::vector< std::list< index_t > >(_lattice.size());
+    _comp_neighbours         =  std::vector< std::vector< index_t > >(_lattice.size());
 
     // precompute index to list of complete neighbours translation table
     for(index_t idx = 0; idx < _lattice.size(); idx++) {
 
       std::vector< coord_t > c = _index_to_coord[idx];
  
-      std::list< index_t > neigh;
+      std::vector< index_t > neigh;
       for(dim_t dim = 0; dim < c.size(); dim++) {
 
 	// -1, +1
@@ -91,28 +91,25 @@ public:
 
     index_t idx = _stack.back();
 
-    std::list< index_t > c_neighs = _comp_neighbours[idx]; 
-    std::list< index_t >::iterator neigh_iter;
+    const std::vector< index_t >* c_neighs = &_comp_neighbours[idx];
+    std::vector< index_t >::const_iterator neigh_iter;
 
-    assert(c_neighs.size() >= INNER_NUMBER_OF_NEIGH - 1  ||  _lattice.size() <= 1);
+    assert(c_neighs->size() >= INNER_NUMBER_OF_NEIGH - 1  ||  _lattice.size() <= 1);
 
-    _adj_total -=  (INNER_NUMBER_OF_NEIGH -  c_neighs.size());
+    _adj_total -=  (INNER_NUMBER_OF_NEIGH -  c_neighs->size());
 
-    for(neigh_iter = c_neighs.begin(); neigh_iter != c_neighs.end(); neigh_iter++) {
+    for(auto neighbor : *c_neighs) {
 
-      _neig_count_lattice[*neigh_iter]--;
-
-      if( _lattice[*neigh_iter] == false &&
-	  _neig_count_lattice[*neigh_iter] == 0) {
-	
-	_adj_total =  _adj_total - 1;
-      }
+      --_neig_count_lattice[neighbor];
+      int subtract = int(!_lattice[neighbor] &&
+                         _neig_count_lattice[neighbor] == 0);
+      _adj_total =  _adj_total - subtract;
     } 
 
     // Call parent's pop, in reverse order of addition.
     LatticeAnimal::pop();
 
-    if (_stack.size() != 0) {
+    if (!_stack.empty()) {
       _adj_total = _adj_total + 1;
     } else {
       assert( _adj_total == 0);
@@ -124,27 +121,21 @@ public:
    */
   void add(index_t idx) {
 
-    if (_stack.size() != 0) {
+    if (!_stack.empty()) {
       _adj_total = _adj_total - 1;
     }
-
     LatticeAnimal::add(idx);
-    
-    std::list< index_t > c_neighs = _comp_neighbours[idx]; 
-    std::list< index_t >::iterator neigh_iter;
+    const std::vector< index_t >* c_neighs = &_comp_neighbours[idx];
 
-    assert(c_neighs.size() >= INNER_NUMBER_OF_NEIGH - 1  ||  _lattice.size() <= 1);
+    assert(c_neighs->size() >= INNER_NUMBER_OF_NEIGH - 1  ||  _lattice.size() <= 1);
 
-    for(neigh_iter = c_neighs.begin(); neigh_iter != c_neighs.end(); neigh_iter++) {
+    for (const auto& neighbor : *c_neighs) {
+      int addend =
+          int((!_lattice[neighbor]) &&
+              (!_neig_count_lattice[neighbor]));
+      _adj_total += addend;
 
-      if( _lattice[*neigh_iter] == false &&
-	  _neig_count_lattice[*neigh_iter] == 0) {
-	
-	_adj_total =  _adj_total + 1;
-      }
-
-      _neig_count_lattice[*neigh_iter]++;
-
+      _neig_count_lattice[neighbor]++;
     } 
 
     /* The lattice has a size dtermined by the largest animal it supposed to hold. 
@@ -153,8 +144,30 @@ public:
      * Because such cell can be adjucent to only one lattice animal cell, there is no problem
      * to add/remove them directly to the total counter
      */ 
-    _adj_total +=  (INNER_NUMBER_OF_NEIGH -  c_neighs.size());
+    _adj_total +=  (INNER_NUMBER_OF_NEIGH -  c_neighs->size());
 
+  }
+
+  int perim_when_added (index_t idx) {
+    const std::vector< index_t >* c_neighs = &_comp_neighbours[idx];
+    std::vector< index_t >::const_iterator neigh_iter;
+
+    assert(c_neighs->size() >= INNER_NUMBER_OF_NEIGH - 1  ||  _lattice.size() <= 1);
+
+    /* The lattice has a size dtermined by the largest animal it supposed to hold. 
+     * Cells that lay beyond the lattice boundary and adjucent to the animal can not
+     * be counted like all the others because _neigh_count_lattice does not contain them.
+     * Because such cell can be adjucent to only one lattice animal cell, there is no problem
+     * to add/remove them directly to the total counter
+     */
+    int returned_perim = _adj_total + (INNER_NUMBER_OF_NEIGH -  c_neighs->size());
+    for (auto& neighbor : *c_neighs) {
+      int addend =
+          int((!_lattice[neighbor]) &&
+              (!_neig_count_lattice[neighbor]));
+      returned_perim += addend;
+    }
+    return returned_perim - 1;
   }
 
   
