@@ -39,7 +39,7 @@ int splitContent(char* content,string* secret, int* algo_id, unsigned int* n, un
 
 /* Parse the string s into the variable provided. Returns 0 is ill formatted, 1 otherwise. */
 int parseU(const char* s, unsigned int* u);
-int parseUll(const char* s, unsigned long long int* ull);
+int parseCount(const char* s, count_t* ull);
 
 /* Print usage info and exit */
 void usage(string);

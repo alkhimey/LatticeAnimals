@@ -185,7 +185,7 @@ char* readNextWord(char* start, string* result) {
 int splitContent(char* content, string* secret, int* algo_id, unsigned int* n, unsigned int* n0, count_t* lowId, count_t* hightId) {
   content = readNextWord(content, secret);
   
-  if(sscanf(content, "%d %d %d %llu %llu", algo_id, n, n0, lowId, hightId) != 5)
+  if(sscanf(content, "%d %d %d %lu %lu", algo_id, n, n0, lowId, hightId) != 5)
     return 0;
   
   return 1;
@@ -197,8 +197,8 @@ int parseU(const char* s, unsigned int* u) {
 }
 
 
-int parseUll(const char* s, unsigned long long int* ull) {
-  return sscanf(s, "%llu", ull) == 1;
+int parseCount(const char* s, count_t* ull) {
+  return sscanf(s, "%lu", ull) == 1;
 }
 
 
@@ -276,8 +276,8 @@ void parseCmdParams(int argc, char* argv[], string *host, int *portno, unsigned 
       else if (args.size() == 4) {
 	success &= parseU(args[0].c_str(), n);
 	success &= parseU(args[1].c_str(), n0);
-	success &= parseUll(args[2].c_str(), lowId);
-	success &= parseUll(args[3].c_str(), hightId);
+	success &= parseCount(args[2].c_str(), lowId);
+	success &= parseCount(args[3].c_str(), hightId);
       } else
 	throw GetOpt::GetOptEx();
     }

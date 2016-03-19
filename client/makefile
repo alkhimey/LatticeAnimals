@@ -69,7 +69,7 @@ UNIT_TESTS_OBJS=$(UNIT_TESTS_SRCS:$(UNIT_TESTS_DIR)/%.cpp=$(OBJ_DIR)/$(UNIT_TEST
 
 .PHONY: all clean
 
-all: dirs $(BIN_DIR)/log4cxx.properties $(EXE) $(UNIT_TESTS_EXE)
+all: dirs $(EXE) $(UNIT_TESTS_EXE) $(BIN_DIR)/log4cxx.properties
 
 # Link only if dependency changed
 #
