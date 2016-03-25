@@ -9,7 +9,6 @@
 #include <fstream>
 
 #include "lattice_animal.h"
-#include "logging.h"
 
 
 

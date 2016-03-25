@@ -15,7 +15,7 @@
 #include "getopt_pp.h"
 #include "alphanum.hpp"
 #include "timing.hpp"
-#include "logging.h"
+#include "easylogging++.h"
 #include "simplehttp.h"
 
 #include "redelemeier.h"
@@ -31,6 +31,8 @@
 
 using namespace std;
 using namespace GetOpt;
+
+INITIALIZE_EASYLOGGINGPP
 
 #define CLIENT_VERSION "2.0"
 #define DEFAULT_HOST "melon"
@@ -94,11 +96,7 @@ int main(int argc, char* argv[]){
 
   ofstream dump_file;
   
-  /* Configure logger (log4cxx) */
-  PropertyConfigurator::configure(LOGGING_CONF_PATH);
- 
-
-  LOG4CXX_INFO(logger, "Starting program. Client version: " << CLIENT_VERSION);
+  LOG(INFO) << "Starting program. Client version: " << CLIENT_VERSION;
 
   parseCmdParams(argc, argv, &host,&portno, &n, &n0, &lowId, &hightId, &algo_id, &dump_file_name);
   
@@ -113,26 +111,26 @@ int main(int argc, char* argv[]){
     }
     
     if(algo_id >= (int)ALGORITHMS.size()) {
-      LOG4CXX_ERROR(logger, "Client does not support alogrithm id " << algo_id);
+      LOG(ERROR) << "Client does not support alogrithm id " << algo_id;
       exit(0);
     }
 
     if(n < n0) {
-      LOG4CXX_ERROR(logger, "n=" << n << " can't be lower than " << "n0=" << n0); 
+      LOG(ERROR) << "n=" << n << " can't be lower than " << "n0=" << n0; 
       exit(0);
     }
 
     if (dump_file_name != "") {
-      LOG4CXX_INFO(logger, "Attempting to open dump file " << dump_file_name);
+      LOG(INFO) << "Attempting to open dump file " << dump_file_name;
       dump_file.open(dump_file_name.c_str());
       if (dump_file.fail()) {
-	LOG4CXX_WARN(logger, "Could not open dump file " << dump_file_name);
+	LOG(WARNING) << "Could not open dump file " << dump_file_name;
       } else {
-	LOG4CXX_INFO(logger, "Opened dump file "<< dump_file_name <<" succesfully");
+      LOG(INFO) << "Opened dump file "<< dump_file_name <<" succesfully";
       }
     }
 
-    LOG4CXX_INFO(logger, "Running algorithm \"" << ALGORITHMS[algo_id].first << "\"...");
+    LOG(INFO) << "Running algorithm \"" << ALGORITHMS[algo_id].first << "\"...";
     
     std::map<std::string, count_t> results;
     
@@ -144,7 +142,7 @@ int main(int argc, char* argv[]){
 
     dump_file.close();
 
-    LOG4CXX_INFO(logger, "Finished running algorithm. This took " << t1 - t0 << " cpu time");
+    LOG(INFO) << "Finished running algorithm. This took " << t1 - t0 << " cpu time";
 
     printResults(results);
     
@@ -155,9 +153,8 @@ int main(int argc, char* argv[]){
       break;
     }
   }
-  
-  
-  LOG4CXX_INFO(logger, "Program finished");
+
+  LOG(INFO) << "Program finished";
 
 #if defined (_WIN32)
   system("pause");
@@ -232,8 +229,7 @@ void usage(string app_name) {
 void parseCmdParams(int argc, char* argv[], string *host, int *portno, unsigned int *n, unsigned int *n0, 
 		    count_t *lowId, count_t *hightId, int *algo_id, string* dump_file_name) {
 
-  //LOG4CXX_INFO(logger, "Command line: " << (*argv)); // TODO: Print command line to log
-  LOG4CXX_INFO(logger, "Parsing command line parameters...");
+  LOG(INFO) << "Parsing command line parameters...";
   GetOpt_pp ops(argc, argv);
   ops.exceptions_all(); 
   bool success = true;
@@ -288,7 +284,7 @@ void parseCmdParams(int argc, char* argv[], string *host, int *portno, unsigned 
   }
   
   if(!success) {
-    LOG4CXX_ERROR(logger, "Can not parse command line parameters");
+    LOG(ERROR) << "Can not parse command line parameters";
     cout << endl;
     usage(ops.app_name());
   }
@@ -297,14 +293,14 @@ void parseCmdParams(int argc, char* argv[], string *host, int *portno, unsigned 
 
 bool getJobFromServer(string host, int portno,  string *secret, int* algo_id, unsigned int *n, unsigned int *n0, count_t *lowId, count_t *hightId) {
   
-  LOG4CXX_INFO(logger, "Will attempt to recieve job from server...");
+  LOG(INFO) << "Will attempt to recieve job from server...";
   
-  LOG4CXX_INFO(logger, "Connecting to " << host << ":" << portno << "...");
+  LOG(INFO) << "Connecting to " << host << ":" << portno << "...";
   
   char* response = httpGet(host.c_str(), ALLOCATE_PAGE, portno);
 
   if(isResponseOk(response) == false) {
-    LOG4CXX_ERROR(logger, "Server error (response not ok)");
+    LOG(ERROR) << "Bad response from server";
     return false;
   }
 
@@ -312,7 +308,7 @@ bool getJobFromServer(string host, int portno,  string *secret, int* algo_id, un
   char* content = extractContent(response);
 
   if(content == NULL) {
-    LOG4CXX_ERROR(logger, "Could not extract the content from the response");
+    LOG(ERROR) << "Could not extract the content from the response";
     return false;
   }
   
@@ -321,25 +317,25 @@ bool getJobFromServer(string host, int portno,  string *secret, int* algo_id, un
   content = readNextWord(content, &expectedVersion);
 
   if (expectedVersion.compare("0") == 0) {
-    LOG4CXX_INFO(logger, "No more jobs available. Prorbably because server allocated all jobs"); 
+    LOG(INFO) << "No more jobs available. Prorbably because server allocated all jobs"; 
     return false;
   } else if (expectedVersion.compare(CLIENT_VERSION) != 0) {
-    LOG4CXX_ERROR(logger, "Version mismatch, server is expecting client version " << expectedVersion); 
+    LOG(ERROR) << "Version mismatch, server is expecting client version " << expectedVersion; 
     return false;
   }
   
   if(splitContent(content, secret, algo_id, n, n0, lowId, hightId) == 0) {
-    LOG4CXX_ERROR(logger, "Could not parse server response ");
+    LOG(ERROR) << "Could not parse server response";
     return false;
   }
   
-  LOG4CXX_INFO(logger, "Recieved job from server n=" << *n << " n0=" << *n0 << " algo_id=" << *algo_id << " lowId=" << *lowId << " hightId=" << *hightId);
+  LOG(INFO) << "Recieved job from server n=" << *n << " n0=" << *n0 << " algo_id=" << *algo_id << " lowId=" << *lowId << " hightId=" << *hightId;
   return true;
 }
 
 void reportResultsToServer(string host, int portno, string secret, count_t lowId, count_t hightId, std::map< std::string, count_t > results, double cpuTime) {
 
-  LOG4CXX_INFO(logger, "Reporting results to the server...");
+  LOG(INFO) << "Reporting results to the server...";
 
   stringstream req;
   req << REPORT_PAGE << "?secret=" << secret << "&low=" << lowId << "&hight=" << hightId << "&cpu=" << cpuTime << "&res=";
@@ -354,7 +350,7 @@ void reportResultsToServer(string host, int portno, string secret, count_t lowId
 
   httpGet(host.c_str(), req.str().c_str(), portno);
 
-  LOG4CXX_INFO(logger, "Finished reporting results");
+  LOG(INFO) << "Finished reporting results";
 
 }
 
@@ -368,9 +364,8 @@ void printResults(std::map<std::string, count_t> results) {
   }
 
   while(q.empty() == false) {
-    LOG4CXX_INFO(logger, "Result for " << q.top() << "\t is " << results[q.top()]);
+    LOG(INFO) << "Result for " << q.top() << "\t is " << results[q.top()];
     q.pop();
   }
-  
 }
 

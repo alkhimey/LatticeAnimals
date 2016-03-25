@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include <string.h>
+#include "easylogging++.h"
 
 #if defined (_WIN32)
 
@@ -20,8 +21,6 @@
 
 #include <errno.h>
 
-#include "logging.h"
-
 #include "simplehttp.h"
 
 static char buffer[BUFFER_MAX_SIZE];
@@ -31,11 +30,11 @@ static char buffer[BUFFER_MAX_SIZE];
 
 void error(const char *msg) {
 #if defined (_WIN32)
-	LOG4CXX_ERROR(logger, msg << ": " << WSAGetLastError());
+  LOG(ERROR) << msg << ": " << WSAGetLastError();
 #else
-	LOG4CXX_ERROR(logger, msg << ": " <<  strerror(errno) );
+  LOG(ERROR) <<  msg << ": " <<  strerror(errno) ;
 #endif
-    exit(0);
+  exit(0);
 }
 
 

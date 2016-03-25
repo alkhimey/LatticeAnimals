@@ -5,3 +5,5 @@ experimental/fixed10a
 *~
 experimental/Gadi/
 client/*.log
+client/logs/
+counting_site/db.sqlite3

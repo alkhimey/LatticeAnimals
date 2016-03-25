@@ -8,7 +8,6 @@
 #include <fstream>
 #include "basic_types.h"
 #include "lattice_animal.h"
-#include "logging.h"
 
 /* Prototype for a counting algorthim entry point 
  * 

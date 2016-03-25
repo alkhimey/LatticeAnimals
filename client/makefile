@@ -12,8 +12,8 @@
 # Compiler related common configurations
 #
 CC_FLAGS := -c -MMD -MP -Wall -std=c++0x
-LD_FLAGS=
-LD_LIBS= -llog4cxx
+LD_FLAGS= -std=c++0x
+LD_LIBS= 
 
 
 
@@ -21,7 +21,9 @@ LD_LIBS= -llog4cxx
 #
 ifeq ($(PLAT), windows)
 
-CXX=i586-mingw32msvc-g++
+#CXX=i586-mingw32msvc-g++
+#CXXx86_64-w64-mingw32-g++ # requires -m32 flag
+CXX=i686-w64-mingw32-g++
 SUFFIX := win
 LD_LIBS += -lws2_32
 
@@ -57,6 +59,7 @@ UNIT_TESTS_DIR=unit_tests
 UNIT_TESTS_SRCS=$(wildcard $(UNIT_TESTS_DIR)/*.cpp)
 OBJ_DIR=obj
 BIN_DIR=bin
+INC_DIR=include
 
 EXE=$(BIN_DIR)/run_$(SUFFIX)
 UNIT_TESTS_EXE=$(BIN_DIR)/unit_tests_$(SUFFIX)
@@ -69,7 +72,8 @@ UNIT_TESTS_OBJS=$(UNIT_TESTS_SRCS:$(UNIT_TESTS_DIR)/%.cpp=$(OBJ_DIR)/$(UNIT_TEST
 
 .PHONY: all clean
 
-all: dirs $(EXE) $(UNIT_TESTS_EXE) $(BIN_DIR)/log4cxx.properties
+#all: dirs $(EXE) $(UNIT_TESTS_EXE) $(BIN_DIR)/log4cxx.properties
+all: dirs $(EXE) $(UNIT_TESTS_EXE)
 
 # Link only if dependency changed
 #
@@ -83,8 +87,8 @@ $(UNIT_TESTS_EXE): $(OBJS_WITHOUT_MAIN) $(UNIT_TESTS_OBJS)
 	$(CXX) $(LD_FLAGS) -o $@ $^ $(LD_LIBS)
 
 
-$(BIN_DIR)/log4cxx.properties: log4cxx.properties
-	cp -f log4cxx.properties $(BIN_DIR)/log4cxx.properties
+#$(BIN_DIR)/log4cxx.properties: log4cxx.properties
+#	cp -f log4cxx.properties $(BIN_DIR)/log4cxx.properties
 
 
 # Create directories. No error if directory already exists
@@ -97,12 +101,12 @@ dirs:
 # Compile all sources and generate dependency lists
 #
 $(OBJ_DIR)/%_$(SUFFIX).o: $(SRC_DIR)/%.cpp
-	g++ $(CC_FLAGS) -o $@ $<
+	$(CXX) $(CC_FLAGS) -I$(INC_DIR) -o $@ $<
 
 # Compile all unit tests and generate dependency lists
 #
 $(OBJ_DIR)/$(UNIT_TESTS_DIR)/%_$(SUFFIX).o: $(UNIT_TESTS_DIR)/%.cpp
-	g++ $(CC_FLAGS) -o $@ $<
+	$(CXX) $(CC_FLAGS) -I$(INC_DIR) -o $@ $<
 
 
 # Include previously generated dependency lists.
