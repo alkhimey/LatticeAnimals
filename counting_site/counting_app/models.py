@@ -83,7 +83,7 @@ def create_jobs(sender, instance, created, **kwargs):
   if created: 
     size = int(math.ceil(float(instance.max_id) / instance.num_of_jobs))
 
-    for i in xrange(1, instance.num_of_jobs + 1 ):
+    for i in range(1, instance.num_of_jobs + 1 ):
       j = Job(config  = instance, 
               low_id  = size*(i-1), 
               high_id = min(size*i, instance.max_id))
