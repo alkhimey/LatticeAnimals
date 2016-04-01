@@ -118,7 +118,7 @@ char* httpGet(const char* host, const char* page, int portno) {
 
 
 bool isResponseOk(char* response) {
-  const char prefix[] = "HTTP/1.0 ";
+  const char prefix[] = "HTTP/1.1 ";
 
   char* i = strstr(response, prefix);
   if (i == NULL) {

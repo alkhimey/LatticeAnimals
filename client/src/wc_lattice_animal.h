@@ -152,16 +152,6 @@ public:
       }
     }
   }
-
-
-  /**
-   * {@inheritDoc} 
-   */
-  //void add_origin() {
-  //  std::vector<coord_t> c(_d, 0);
-  //  add(calc_index(c));
-  //}
-
   
 };
 

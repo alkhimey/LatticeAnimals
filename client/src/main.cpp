@@ -22,6 +22,7 @@
 #include "counting_algorithm.h"
 #include "convex_counter.h"
 #include "wc_lattice_animal.h"
+//#include "sc_lattice_animal.h"
 #include "adj_count_lattice_animal.h"
 #include "simple_counter.h"
 #include "histogram_counter.h"
@@ -34,11 +35,11 @@ using namespace GetOpt;
 
 INITIALIZE_EASYLOGGINGPP
 
-#define CLIENT_VERSION "2.0"
-#define DEFAULT_HOST "melon"
+#define CLIENT_VERSION "2.1"
+#define DEFAULT_HOST "clown.pythonanywhere.com"
 #define ALLOCATE_PAGE "allocate"
 #define REPORT_PAGE "report"
-#define DEFAULT_PORT_NO 8000
+#define DEFAULT_PORT_NO 80
 #define DEFAULT_ALGO_ID 0
 
 
@@ -64,7 +65,9 @@ vector< pair< string, CountingAlgorithm > > ALGORITHMS = {
 
   make_pair("count histo adjacent cells 2d", redelemeier_main<AdjCountLatticeAnimal, HistogramCounter, 2>),
   make_pair("count hosto adjacent cells 3d", redelemeier_main<AdjCountLatticeAnimal, HistogramCounter, 3>),
-  
+
+  //make_pair("strongly convex fixed 2d", redelemeier_main<StronglyConvexLatticeAnimal, SimpleCounter, 2>),
+  //make_pair("strongly convex fixed 3d", redelemeier_main<StronglyConvexLatticeAnimal, SimpleCounter, 3>),
   
   //make_pair("redelemeier with pruning weak convex 3d (obsolete)", redelemeier_with_pruning::line_convex_counter_3d),
   //make_pair("redelemeier with pruning strong convex 3d (obsolete)", redelemeier_with_pruning::full_convex_counter_3d)
