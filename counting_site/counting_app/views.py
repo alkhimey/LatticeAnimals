@@ -79,6 +79,13 @@ def report(request):
 def info(request):
   #context = {'latest_question_list': latest_question_list}
   #return render(request, 'polls/index.html', context)
+  c = Config.objects.order_by('-date_activated').first()
+  
+  s = []
+  for d in sorted(c.results_totals(), key = lambda item : int(item['key'])):
+	s += d['key'] + "\t" +  str(d['value__sum']) + "<br>"
 
-  return HttpResponse("Obsolete: Use admin interface")
+  return HttpResponse(s)
+
+  #return HttpResponse("Obsolete: Use admin interface")
 
