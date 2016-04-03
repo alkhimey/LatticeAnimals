@@ -83,7 +83,7 @@ def info(request):
   
   s = []
   for d in sorted(c.results_totals(), key = lambda item : int(item['key'])):
-	s += d['key'] + "\t" +  str(d['value__sum']) + "<br>"
+    s += d['key'] + "\t" +  str(d['value__sum']) + "<br>"
 
   return HttpResponse(s)
 
