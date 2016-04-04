@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <string.h>
+#include <string>
+
+#include <regex>
+
 #include "easylogging++.h"
 
 #if defined (_WIN32)
@@ -43,21 +46,21 @@ void error(const char *msg) {
 int connectTCP(const char* host, const char* page, int portno) {
     int sockfd;
    	
-	struct sockaddr_in serv_addr;
+    struct sockaddr_in serv_addr;
     struct hostent *server;
 
-	// Create socket //
+    // Create socket //
     sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sockfd < 0) 
         error("ERROR opening socket");
     
 
-	// Get ip from hostname //
-	server = gethostbyname(host);
+    // Get ip from hostname //
+    server = gethostbyname(host);
     if (server == NULL)
         error("ERROR, can not find host\n");
     
-	memset((char *) &serv_addr, 0, sizeof(serv_addr));
+    memset((char *) &serv_addr, 0, sizeof(serv_addr));
 
 
     serv_addr.sin_family = AF_INET;
@@ -89,11 +92,15 @@ char* httpGet(const char* host, const char* page, int portno) {
     
   sprintf(buffer, "GET /%s HTTP/1.0\r\nHost: %s\r\n\r\n", page, host);
 
+  LOG(INFO) << "Buffer: " << buffer;
+  
   n = send(sockfd,buffer,strlen(buffer), 0);
 	
   if (n < 0) 
     error("ERROR writing to socket");
    
+  memset(buffer, 0, sizeof(buffer));
+
   int count = 0;
   do {
     n = recv(sockfd, buffer + count, BUFFER_MAX_SIZE - count, 0);
@@ -117,18 +124,18 @@ char* httpGet(const char* host, const char* page, int portno) {
 }
 
 
+/**
+ * Only 200 is consodered valid
+ */
 bool isResponseOk(char* response) {
-  const char prefix[] = "HTTP/1.1 ";
-
-  char* i = strstr(response, prefix);
-  if (i == NULL) {
+  if (std::regex_search (response, std::regex("HTTP/[[:digit:]]+\\.[[:digit:]]+ 200") )) {
+    return true;
+  } else { 
+    LOG(ERROR) << "Bad response: " << response;
     return false;
-  } else {
-    i += strlen(prefix);
   }
-
-  return i[0] == '2' && i[1] == '0' && i[2] == '0';
 }
+
 
 char* extractContent(char* response) {
 	char* i = strstr(response, "\r\n\r\n");
