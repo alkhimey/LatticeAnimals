@@ -35,7 +35,7 @@ using namespace GetOpt;
 
 INITIALIZE_EASYLOGGINGPP
 
-#define CLIENT_VERSION "2.1"
+#define CLIENT_VERSION "2.2"
 #define DEFAULT_HOST "clown.pythonanywhere.com"
 #define ALLOCATE_PAGE "allocate"
 #define REPORT_PAGE "report"
