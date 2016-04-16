@@ -43,7 +43,7 @@ SUFFIX := $(SUFFIX)_release
 
 else
 
-CC_FLAGS += -g -Og -D_GLIBCXX_DEBUG
+CC_FLAGS += -g -O0 -fno-inline-functions -D_GLIBCXX_DEBUG
 SUFFIX:=$(SUFFIX)_debug
 
 endif

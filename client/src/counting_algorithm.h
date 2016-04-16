@@ -38,19 +38,26 @@ void redelemeier_main (coord_t n,
 
   C counter(n, D);
   A a(D,n);
-  a.add(a.get_origin()); // add the origin
+
     
-  count_t curr_id = 0;
+ 
+
+  // Special treatment for the origin. 
+  a.add(a.get_origin());
+  if(a.size() >= n0 && 0 >= low_id && 0 < high_id && a.is_in_class()) {
+    counter.increment(a.size(), a.get_count());
+    if (dump_file != NULL) {
+      a.dump(dump_file);
+    }
+  }
+
   std::list< index_t > untried = a.get_new_untried();
-
-  counter.increment(a.size(), a.get_count()); // count the origin
-
   redelemeier_recursive(a,
 			untried,
 			n0,
 			low_id, 
 			high_id,
-			curr_id,
+			0,
 			counter,
 			dump_file); 
 
@@ -101,12 +108,12 @@ count_t redelemeier_recursive(A &a,
     }
     
     // Count only those which are in the search range and in the counted class.
+    // Notice that "is_in_class" might be different from "can_add".
+    // One is used to prune the search tree, the other is used to filter polyominoes without 
+    // pruning.
     if(a.size() >= n0 && curr_id >= low_id && curr_id < high_id && a.is_in_class()) {
-      
-
-      //(*results)[a.size()] += a.get_count();
+  
       counter.increment(a.size(), a.get_count());
-
 
       if (dump_file != NULL) {
 	a.dump(dump_file);
