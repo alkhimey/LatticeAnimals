@@ -1,0 +1,3 @@
+*.pyc
+mysql.conf
+db.sqlite3

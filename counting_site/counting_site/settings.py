@@ -58,7 +58,24 @@ WSGI_APPLICATION = 'counting_site.wsgi.application'
 # https://docs.djangoproject.com/en/1.7/ref/settings/#databases
 
 DATABASES = {
+
     'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'OPTIONS': {
+            'read_default_file': os.path.join(BASE_DIR, 'mysql.conf'),
+        },
+    },
+
+    # mysql.conf looks like this:
+    # [client]
+    # database = DB_NAME
+    # host = localhost
+    # user = DB_USER
+    # password = DB_PASSWORD
+    # default-character-set = utf8
+    
+    
+    'old-default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
         'ATOMIC_REQUESTS' : True,
