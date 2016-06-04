@@ -3,6 +3,11 @@ from django.http import HttpResponse
 from counting_app.models import Config,Job,KeyValueResult
 from django.db.models import Q
 
+
+from django.template.loader import get_template
+from django.template import Context
+
+
 import math
 import random
 from datetime import datetime, timedelta
@@ -76,16 +81,38 @@ def report(request):
 
   return HttpResponse('')
 
-def info(request):
+def info_dir(request):
+  t = get_template('counting_app/info_dir.html')
+  config_list = Config.objects.order_by('-date_activated')
+  html = t.render(Context({'config_list': config_list}))
+  return HttpResponse(html)
+
+
+def info(request, config_pk):
+  t = get_template('counting_app/info.html')
+
+  config       = Config.objects.get(pk = config_pk)
+  parameters   = Config.objects.all().filter(pk = 1).values()[0]
+  results      = sorted(config.results_totals(), key = lambda item : int(item['key']))
+  participants = config.participants_list()
+  
+  html = t.render(Context({
+    'config'       : config,
+    'parameters'   : parameters,
+    'results'      : results,
+    'participants' : participants}))
+  return HttpResponse(html)
+
+
+
   #context = {'latest_question_list': latest_question_list}
   #return render(request, 'polls/index.html', context)
-  c = Config.objects.order_by('-date_activated').first()
-  
-  s = []
-  for d in sorted(c.results_totals(), key = lambda item : int(item['key'])):
-    s += d['key'] + "\t" +  str(d['value__sum']) + "<br>"
+  #c = Config.objects.order_by('-date_activated').first()
+  #
+  #s = []
+  #for d in sorted(c.results_totals(), key = lambda item : int(item['key'])):
+  #  s += d['key'] + "\t" +  str(d['value__sum']) + "<br>"
+  #
+  #return HttpResponse(s)
 
-  return HttpResponse(s)
-
-  #return HttpResponse("Obsolete: Use admin interface")
 

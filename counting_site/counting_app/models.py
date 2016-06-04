@@ -1,10 +1,10 @@
 import math
 
 from django.db import models
-from django.db.models import Sum
+from django.db.models import Sum,Count
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
+import datetime
 
 
 class Config(models.Model):
@@ -21,6 +21,8 @@ class Config(models.Model):
     
   
   def num_of_jobs_allocated(self):
+    """ Allocated and not complete yet """
+    
     return self.job_set.filter(date_reported = None).exclude(date_allocated = None).count()
 
   def num_of_jobs_complete(self):
@@ -40,6 +42,31 @@ class Config(models.Model):
     else:
       return 0
 
+  def total_cpu_time(self):
+    """ Conpound CPU time spent by all participants on this counting effort """
+
+    return datetime.timedelta(
+      seconds = self.job_set.aggregate(Sum('cpu_time'))['cpu_time__sum'])
+
+  def last_report_date(self):
+    return self.job_set.order_by('-date_reported')[0].date_reported
+  
+  def total_real_time(self):
+    latest_job = self.job_set.order_by('-date_reported')[0]
+
+    last_reprot =  self.last_report_date()
+    if not last_reprot:
+      return datetime.timedelta(0)
+    else:
+      return  last_reprot - self.date_activated
+    
+
+  def participants_list(self):
+    """ Return aggregate info about ip addresses that are participating in the effort """
+
+    return self.job_set.exclude(date_reported__isnull = True).values('ip_allocated').annotate(cpu_time_sum = Sum('cpu_time'), num_of_jobs_complete = Count('pk')).order_by('-cpu_time_sum')
+  
+    
   def __str__(self):
     return "%d %d v%s-%d" % (self.n, self.n0, self.client_version, self.algo_id)
 

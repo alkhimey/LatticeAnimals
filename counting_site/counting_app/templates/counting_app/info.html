@@ -1,0 +1,119 @@
+{% load staticfiles %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>title</title>
+    <link rel="stylesheet" href="{% static 'counting_app/style.css' %}"> 
+  </head>
+  <body>
+
+    <h1> Info for {{ config }} </h1>
+
+
+    <h2> Results </h2>
+
+    {% if results %}
+
+    <table>
+
+      {% for d in results %} 
+      <tr>
+	<th class="header_col"> {{ d.key }}  </th>
+	<td class="col"> {{ d.value__sum }}  </td>
+      </tr>
+      {% endfor %}
+
+    </table>
+
+    {% else %} 
+
+    No results yet...
+
+    {% endif %}
+
+
+    <h2> Parameters </h2>
+
+    <table>
+
+      {% for k,v in parameters.items %} 
+      <tr>
+	<th class="header_col"> {{ k }}  </th>
+	<td class="col"> {{ v }}  </td>
+      </tr>
+      {% endfor %}
+
+    </table>
+    
+    
+    <h2> Progress </h2>
+
+    <table>
+
+      <tr>
+	<th class="header_col"> Last Report  </th>
+	<td class="col"> {{ config.last_report_date }}  </td>
+      </tr>
+      
+      <tr>
+	<th class="header_col">  Total CPU Time  </th>
+	<td class="col"> {{ config.total_cpu_time }}  </td>
+      </tr>
+
+      <tr>
+	<th class="header_col"> Total Real Time  </th>
+	<td class="col"> {{ config.total_real_time }}  </td>
+      </tr>
+
+      <tr>
+	<th class="header_col"> Jobs Complete  </th>
+	<td class="col"> {{ config.num_of_jobs_complete }}  </td>
+      </tr>
+
+      <tr>
+	<th class="header_col"> Jobs in Progress  </th>
+	<td class="col"> {{ config.num_of_jobs_allocated }}  </td>
+      </tr>
+
+      <tr>
+	<th class="header_col"> Jobs Left  </th>
+	<td class="col"> {{ config.num_of_jobs_left }}  </td>
+      </tr>
+      
+    </table>
+    
+
+    <h2>Participants</h2>
+
+    {% if participants %}
+    
+    <table>
+
+      <tr>
+	<th class="header_row"> IP Address  </th>
+	<th class="header_row"> Compound CPU Time  </th>
+	<th class="header_row"> Number of Completed Jobs  </th>
+      </tr>
+      
+    {% for p in participants %}
+
+      <tr>
+	<td class="header_col"> {{ p.ip_allocated }}  </td>
+	<td class="col"> {{ p.cpu_time_sum }}  </td>
+	<td class="col"> {{ p.num_of_jobs_complete }}  </td>
+      </tr>
+
+    {% endfor %}
+    </table>
+    {% else %}
+
+    No participants yet...
+    
+    {% endif %}
+
+    <br><br><br><br>
+    
+  </body>
+</html>

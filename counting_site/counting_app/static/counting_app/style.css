@@ -1,0 +1,23 @@
+
+
+tr:nth-child(even) {background-color: #f2f2f2}
+
+tr:hover                 { background: #73dc69; }
+tr:nth-child(even):hover { background: #73dc69; }
+
+th.header_row {
+    background-color: #4CAF50;
+    color: white;
+}
+
+th.header_col {
+    text-align: left;
+    width: 200px;
+}
+
+
+td.col {
+    text-align: right;
+    width: 200px;
+}
+

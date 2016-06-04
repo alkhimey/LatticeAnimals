@@ -1,0 +1,40 @@
+{% load staticfiles %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>title</title>
+    <link rel="stylesheet" href="{% static 'counting_app/style.css' %}"> 
+  </head>
+  <body>
+
+    <h1> Counting Efforts Directory </h1>
+
+    <br />
+    
+    <table width="100%">
+
+      <tr>
+	<th class="header_row"> # </th>
+	<th class="header_row"> Date Started </th>
+	<th class="header_row"> Parameters </th>
+	<th class="header_row"> Jobs Left </th>
+      </tr>
+
+
+      {% for c in config_list %} 
+
+      <tr>
+	<td align=center> <a href="info/{{ c.pk }}"> {{ c.pk }} </a> </td>
+	<td>              <a href="info/{{ c.pk }}"> {{ c.date_activated }}  </a> </td>
+	<td>              <a href="info/{{ c.pk }}"> {{ c }}  </a> </td>
+	<td>              <a href="info/{{ c.pk }}"> {{ c.num_of_jobs_left }} </a> </td>
+      </tr>
+      
+      {% endfor %}
+      
+    </table>
+    
+  </body>
+</html>
