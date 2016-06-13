@@ -12,6 +12,8 @@ typedef uint16_t dim_t;
 
 typedef uint32_t index_t; /// Index of the flat array
 
+typedef uint32_t subspace_index_t; /// Subspace identifier
+
 typedef uint32_t column_t; /// Index of column
 
 #endif

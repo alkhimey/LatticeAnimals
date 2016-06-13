@@ -22,7 +22,7 @@
 #include "counting_algorithm.h"
 #include "convex_counter.h"
 #include "wc_lattice_animal.h"
-//#include "sc_lattice_animal.h"
+#include "sc_lattice_animal.h"
 #include "adj_count_lattice_animal.h"
 #include "simple_counter.h"
 #include "histogram_counter.h"
@@ -35,7 +35,7 @@ using namespace GetOpt;
 
 INITIALIZE_EASYLOGGINGPP
 
-#define CLIENT_VERSION "2.2"
+#define CLIENT_VERSION "2.3"
 #define DEFAULT_HOST "clown.pythonanywhere.com"
 #define ALLOCATE_PAGE "allocate"
 #define REPORT_PAGE "report"
@@ -71,6 +71,13 @@ vector< pair< string, CountingAlgorithm > > ALGORITHMS = {
   
   //make_pair("redelemeier with pruning weak convex 3d (obsolete)", redelemeier_with_pruning::line_convex_counter_3d),
   //make_pair("redelemeier with pruning strong convex 3d (obsolete)", redelemeier_with_pruning::full_convex_counter_3d)
+
+  make_pair("strongly convex fixed 2d", redelemeier_main<StronglyConvexLatticeAnimal, SimpleCounter, 2>),
+  make_pair("strongly convex fixed 3d", redelemeier_main<StronglyConvexLatticeAnimal, SimpleCounter, 3>),
+  make_pair("strongly convex fixed 4d", redelemeier_main<StronglyConvexLatticeAnimal, SimpleCounter, 4>),
+  make_pair("strongly convex fixed 5d", redelemeier_main<StronglyConvexLatticeAnimal, SimpleCounter, 5>),
+
+
 };
 
 

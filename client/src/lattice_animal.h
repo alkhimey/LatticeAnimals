@@ -22,13 +22,6 @@ index_t pow_nd(coord_t n, dim_t d);
  * This class represents a lattice animal on a d-dimensional lattice of maximal size n.
  */
 class LatticeAnimal {
-  
-  // TODO: Artium remove!!!!!
- public:
-  std::vector< index_t >           get_stack() const {
-    return _stack;
-  }
-
 
 protected:
   dim_t _d;

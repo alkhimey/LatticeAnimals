@@ -32,7 +32,7 @@ public:
 };
 
 
-TEST_CASE( "constructor", "[weakly convex lattice animal]") {
+TEST_CASE( "weakly convex constructor", "[weakly convex lattice animal][constructor]") {
   
   std::vector< std::pair< column_t, coord_t > > cols;
 
