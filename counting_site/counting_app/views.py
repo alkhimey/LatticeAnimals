@@ -92,7 +92,7 @@ def info(request, config_pk):
   t = get_template('counting_app/info.html')
 
   config       = Config.objects.get(pk = config_pk)
-  parameters   = Config.objects.all().filter(pk = 1).values()[0]
+  parameters   = Config.objects.all().filter(pk = config_pk).values()[0]
   results      = sorted(config.results_totals(), key = lambda item : int(item['key']))
   participants = config.participants_list()
   
