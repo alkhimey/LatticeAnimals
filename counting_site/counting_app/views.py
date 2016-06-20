@@ -7,6 +7,7 @@ from django.db.models import Q
 from django.template.loader import get_template
 from django.template import Context
 
+from ipware.ip import get_ip
 
 import math
 import random
@@ -48,7 +49,7 @@ def allocate(request):
 
   # Actual allocation
   j.secret_hash     = gen_random_word(j.config.secret_hash_length)
-  j.ip_allocated    = request.META['REMOTE_ADDR']
+  j.ip_allocated    = get_real_ip(request)
   j.date_allocated  = datetime.today()
   j.save()
 
