@@ -1,7 +1,7 @@
 import math
 
 from django.db import models
-from django.db.models import Sum,Count
+from django.db.models import Sum,Count, Avg
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 import datetime
@@ -29,7 +29,7 @@ class Config(models.Model):
     return self.job_set.exclude(date_reported = None).count()
 
   def num_of_jobs_left(self):
-    return self.job_set.filter(date_allocated = None).count()
+    return self.job_set.filter(date_reported = None).count()
 
   def results_totals(self):
     return KeyValueResult.objects.filter(job__config = self).values('key').annotate(Sum('value'))  
@@ -48,6 +48,10 @@ class Config(models.Model):
     return datetime.timedelta(
       seconds = self.job_set.aggregate(Sum('cpu_time'))['cpu_time__sum'])
 
+  def avarage_job_cpu_time(self):
+    """ Return the avarage job cpu time for a config """
+    return self.job_set.aggregate(Avg('cpu_time')).values()[0]
+
   def last_report_date(self):
     return self.job_set.order_by('-date_reported')[0].date_reported
   
@@ -64,8 +68,13 @@ class Config(models.Model):
   def participants_list(self):
     """ Return aggregate info about ip addresses that are participating in the effort """
 
-    return self.job_set.exclude(date_reported__isnull = True).values('ip_allocated').annotate(cpu_time_sum = Sum('cpu_time'), num_of_jobs_complete = Count('pk')).order_by('-cpu_time_sum')
+    return self.job_set.exclude(date_reported__isnull = True).values('ip_allocated').annotate(cpu_time_sum = Sum('cpu_time'), avarage_job_cpu_time = Avg('cpu_time'),  num_of_jobs_complete = Count('pk')).order_by('-cpu_time_sum')
   
+
+  def predicted_time_left(self):
+    return self.avarage_job_cpu_time() * self.num_of_jobs_left()
+
+
     
   def __str__(self):
     return "%d %d v%s-%d" % (self.n, self.n0, self.client_version, self.algo_id)

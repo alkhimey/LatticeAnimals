@@ -4,7 +4,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>title</title>
+    <title>{{ config }}</title>
     <link rel="stylesheet" href="{% static 'counting_app/style.css' %}"> 
   </head>
   <body>
@@ -17,7 +17,10 @@
     {% if results %}
 
     <table>
-
+      <tr>
+          <th class="header_row"> n </td>
+          <th class="header_row"> result </td>
+      </tr>
       {% for d in results %} 
       <tr>
 	<th class="header_col"> {{ d.key }}  </th>
@@ -63,6 +66,12 @@
       </tr>
 
       <tr>
+	<th class="header_col">  Avg CPU per Job (sec)  </th>
+	<td class="col"> {{ config.avarage_job_cpu_time }}  </td>
+      </tr>
+
+
+      <tr>
 	<th class="header_col"> Total Real Time  </th>
 	<td class="col"> {{ config.total_real_time }}  </td>
       </tr>
@@ -78,8 +87,13 @@
       </tr>
 
       <tr>
-	<th class="header_col"> Jobs Left  </th>
+	<th class="header_col"> Jobs Not Complete  </th>
 	<td class="col"> {{ config.num_of_jobs_left }}  </td>
+      </tr>
+
+     <tr>
+	<th class="header_col"> Predicted Time Left  </th>
+	<td class="col"> {{ config.predicted_time_left }}  </td>
       </tr>
       
     </table>
@@ -94,6 +108,7 @@
       <tr>
 	<th class="header_row"> IP Address  </th>
 	<th class="header_row"> Compound CPU Time  </th>
+	<th class="header_row"> Avg CPU Time per Job (sec) </th>
 	<th class="header_row"> Number of Completed Jobs  </th>
       </tr>
       
@@ -102,6 +117,7 @@
       <tr>
 	<td class="header_col"> {{ p.ip_allocated }}  </td>
 	<td class="col"> {{ p.cpu_time_sum }}  </td>
+	<td class="col"> {{ p.avarage_job_cpu_time }}  </td>
 	<td class="col"> {{ p.num_of_jobs_complete }}  </td>
       </tr>
 
