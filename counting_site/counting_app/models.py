@@ -72,7 +72,8 @@ class Config(models.Model):
   
 
   def predicted_time_left(self):
-    return self.avarage_job_cpu_time() * self.num_of_jobs_left()
+    return datetime.timedelta(
+      seconds = self.avarage_job_cpu_time() * self.num_of_jobs_left())
 
 
     
