@@ -50,7 +50,7 @@ class Config(models.Model):
 
   def avarage_job_cpu_time(self):
     """ Return the avarage job cpu time for a config """
-    return self.job_set.aggregate(Avg('cpu_time')).values()[0]
+    return self.job_set.aggregate(Avg('cpu_time'))['cpu_time__avg']
 
   def last_report_date(self):
     return self.job_set.order_by('-date_reported')[0].date_reported
