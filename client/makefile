@@ -26,6 +26,7 @@ ifeq ($(PLAT), windows)
 CXX=i686-w64-mingw32-g++
 SUFFIX := win
 LD_LIBS += -lws2_32
+LD_FLAGS += -static-libgcc -static-libstdc++
 
 else
 
