@@ -7,7 +7,7 @@ from django.db.models import Q
 from django.template.loader import get_template
 from django.template import Context
 
-from ipware.ip import get_ip
+from ipware.ip import get_real_ip
 
 import math
 import random
