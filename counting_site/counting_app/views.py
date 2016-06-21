@@ -59,7 +59,7 @@ def allocate(request):
 def report(request):
   
   j = Job.objects.filter(secret_hash  = request.GET.get('secret', None), 
-                         ip_allocated = request.META['REMOTE_ADDR']).first()
+                         ip_allocated = get_real_ip(request)).first()
 
   # If wrong secret hash or job allocated to someone else or reported already 
   if not j or j.date_reported != None:
