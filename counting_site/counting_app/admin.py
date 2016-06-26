@@ -59,7 +59,7 @@ class ResultsInlnie(admin.TabularInline):
 
 @admin.register(Config)
 class ConfigAdmin(admin.ModelAdmin):
-    list_display = ( 'n', 'n0', 'algo_id', 'result_for_n',  'client_version', 'date_activated', 'num_of_jobs_left', 'num_of_jobs_allocated', 'num_of_jobs_complete' )
+    list_display = ( 'n', 'n0', 'algo_id', 'result_for_n',  'client_version', 'date_activated', 'num_of_jobs_left', 'num_of_jobs_allocated', 'num_of_jobs_complete', 'comment' )
     list_display_links = list_display
     readonly_fields = [ 'date_created', 'num_of_jobs_left', 'num_of_jobs_allocated', 'num_of_jobs_complete', 'results_totals', 'total_jobs' ]
 
@@ -67,7 +67,7 @@ class ConfigAdmin(admin.ModelAdmin):
 
     fieldsets = [
         ('Confiiguration',   
-         {'fields' : ['date_created', 'date_activated', 'client_version', 'algo_id', 'n', 'n0', 'max_id', 'num_of_jobs', 'secret_hash_length', 'minutes_before_realloc'], 
+         {'fields' : ['date_created', 'date_activated', 'client_version', 'algo_id', 'n', 'n0', 'max_id', 'num_of_jobs', 'secret_hash_length', 'minutes_before_realloc', 'comment'], 
           'classes': []}),
         
         ('Progress',         

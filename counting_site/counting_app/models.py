@@ -18,6 +18,7 @@ class Config(models.Model):
   num_of_jobs            = models.IntegerField(help_text = "To how many jobs we want to split the counting")
   secret_hash_length     = models.IntegerField(default=32, help_text = "Max is 64")
   minutes_before_realloc = models.IntegerField(default=10, help_text = "Minutes to wait before an unreported job can be reallocated")
+  comment                = models.CharField(max_length=1000, help_text = "User comment")
     
   
   def num_of_jobs_allocated(self):
@@ -50,19 +51,21 @@ class Config(models.Model):
 
   def avarage_job_cpu_time(self):
     """ Return the avarage job cpu time for a config """
-    return self.job_set.aggregate(Avg('cpu_time'))['cpu_time__avg']
+    if not self.job_set.exclude(date_reported__isnull = True).exists():
+      return 0.0
+    else:
+      return self.job_set.exclude(date_reported__isnull = True).aggregate(Avg('cpu_time'))['cpu_time__avg']
 
   def last_report_date(self):
     return self.job_set.order_by('-date_reported')[0].date_reported
   
   def total_real_time(self):
-    latest_job = self.job_set.order_by('-date_reported')[0]
+    """ Total real world time that passed since activation """
 
-    last_reprot =  self.last_report_date()
-    if not last_reprot:
+    if not self.date_activated:
       return datetime.timedelta(0)
     else:
-      return  last_reprot - self.date_activated
+      return  datetime.datetime.now() - self.date_activated
     
 
   def participants_list(self):
