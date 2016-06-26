@@ -64,7 +64,7 @@ def report(request):
 
   # If wrong secret hash or job allocated to someone else or reported already 
   if not j or j.date_reported != None:
-    print "Report rejected:", request.GET.get('secret', None)
+    print ("Report rejected:", request.GET.get('secret', None))
     return HttpResponse('')
 
 
