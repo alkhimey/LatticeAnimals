@@ -79,6 +79,20 @@ class Config(models.Model):
       seconds = self.avarage_job_cpu_time() * self.num_of_jobs_left())
 
 
+  def   job_complete_histo(self, num_of_bins = 12):
+    """ Produces an array of number of complete jobs per round hour 
+        For example if num_of_bins is 3 and current time is 15:33:22, the 
+        result will be  dictonary with key 14:00:00 pointing to number of complete jobs 
+        between 14:00:00 and 15:00:00 and key 13:00:00 pointing to number of 
+        complete jobs between 13:00:00 and 14:00:00
+    """    
+
+    results = {}
+    for dt in range(num_of_bins):
+      end_date = datetime.datetime.today().replace(minute = 0, second = 0, microsecond = 0) - datetime.timedelta(hours = dt)
+      start_date = end_date - datetime.timedelta(hours = 1)
+      results[start_date] =   self.job_set.filter(date_reported__range = (start_date, end_date)).count()
+    return results
     
   def __str__(self):
     return "%d %d v%s-%d" % (self.n, self.n0, self.client_version, self.algo_id)

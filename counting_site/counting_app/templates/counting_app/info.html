@@ -109,7 +109,7 @@
 	<th class="header_row"> IP Address  </th>
 	<th class="header_row"> Compound CPU Time  </th>
 	<th class="header_row"> Avg CPU Time per Job (sec) </th>
-	<th class="header_row"> Number of Completed Jobs  </th>
+	<th class="header_row"> Jobs Complete  </th>
       </tr>
       
     {% for p in participants %}
@@ -128,6 +128,22 @@
     No participants yet...
     
     {% endif %}
+
+    
+    <h2>Jobs Complete Per Hour</h2>
+    <table>
+      <tr>
+          <th class="header_row"> Hour </td>
+          <th class="header_row"> Jobs </td>
+      </tr>
+      {% for k,v in job_complete_histo %} 
+      <tr>
+	<th class="header_col"> {{ k }}  </th>
+	<td class="col">        {{ v }}  </td>
+      </tr>
+      {% endfor %}
+
+    </table>
 
     <br><br><br><br>
     

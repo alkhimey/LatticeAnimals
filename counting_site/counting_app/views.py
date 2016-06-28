@@ -95,16 +95,18 @@ def info(request, config_pk):
   t = get_template('counting_app/info.html')
 
   config       = Config.objects.get(pk = config_pk)
-  parameters   = Config.objects.all().filter(pk = config_pk).values()[0]
-  results      = sorted(config.results_totals(), key = lambda item : int(item['key']))
 
-  participants = config.participants_list()
-  
   html = t.render(Context({
-    'config'       : config,
-    'parameters'   : parameters,
-    'results'      : results,
-    'participants' : participants}))
+    'config'               : config,
+    'parameters'           : Config.objects.all().filter(pk = config_pk).values()[0],
+    'results'              : sorted(config.results_totals(), key = lambda item : int(item['key'])),
+    'participants'         : config.participants_list(),
+    'job_complete_histo'   : sorted(config.job_complete_histo().items(), reverse=True)
+  }))
+  
+  for (k,v) in sorted(config.job_complete_histo().items(), reverse=True):
+	print k, v
+
   return HttpResponse(html)
 
 
