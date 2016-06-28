@@ -103,9 +103,6 @@ def info(request, config_pk):
     'participants'         : config.participants_list(),
     'job_complete_histo'   : sorted(config.job_complete_histo().items(), reverse=True)
   }))
-  
-  for (k,v) in sorted(config.job_complete_histo().items(), reverse=True):
-	print k, v
 
   return HttpResponse(html)
 
