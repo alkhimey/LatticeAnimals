@@ -101,7 +101,7 @@ def info(request, config_pk):
     'parameters'           : Config.objects.all().filter(pk = config_pk).values()[0],
     'results'              : sorted(config.results_totals(), key = lambda item : int(item['key'])),
     'participants'         : config.participants_list(),
-    'job_complete_histo'   : sorted(config.job_complete_histo().items(), reverse=True)
+    'job_complete_histo'   : sorted(config.job_complete_histo(num_of_bins = 48).items(), reverse=True)
   }))
 
   return HttpResponse(html)
