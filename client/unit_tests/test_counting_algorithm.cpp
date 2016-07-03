@@ -11,6 +11,7 @@
 
 #include "../src/lattice_animal.h"
 #include "../src/wc_lattice_animal.h"
+#include "../src/wc_filtered_lattice_animal.h"
 #include "../src/counting_algorithm.h"
 #include "../src/simple_counter.h"
 #include "catch.hpp"
@@ -154,9 +155,12 @@ TEST_CASE( "A151830 - Number of fixed 4-dimensional polycubes with n cells." , "
   CHECK( r["8"]  == (count_t)2323730  );
 }
 
+
+
 TEST_CASE( "A067675 - Number of fixed convex polyominoes with n cells." , "[counting][oeis]" ) {
 
-  CountingAlgorithm algo = redelemeier_main<WeaklyConvexLatticeAnimal, SimpleCounter, 2>;
+  CountingAlgorithm algo        = redelemeier_main<WeaklyConvexLatticeAnimal, SimpleCounter, 2>;
+  CountingAlgorithm algo_filter = redelemeier_main<WeaklyConvexFilteredLatticeAnimal, SimpleCounter, 2>;
 
   std::map<std::string, count_t> calculated_results;
 
@@ -180,7 +184,23 @@ TEST_CASE( "A067675 - Number of fixed convex polyominoes with n cells." , "[coun
     { "16", 1841867 },
   };
 
-  SECTION("No split, n = 12") {  
+
+  SECTION("No split, n = 10, simple algorithm uses filtering") {  
+    algo_filter(
+	 (coord_t)10,          //coord_t n
+	 (coord_t)0,           //coord_t n0,
+	 (count_t)0,           //count_t low_id,
+	 (count_t)1,           //count_t  high_id,
+	 &calculated_results,  //std::vector<count_t>* results,
+	 NULL                  //std::ofstream* dump_file
+	 );
+    
+    for(auto const &result : calculated_results) {
+      CHECK( result.second == oeis_results[result.first] );
+    }
+  }
+
+  SECTION("No split, n = 10") {  
     algo(
 	 (coord_t)10,          //coord_t n
 	 (coord_t)0,           //coord_t n0,
