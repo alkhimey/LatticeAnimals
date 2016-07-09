@@ -57,9 +57,7 @@ vector< pair< string, CountingAlgorithm > > ALGORITHMS = {
   make_pair("weakly convex fixed 4d", redelemeier_main<WeaklyConvexLatticeAnimal, SimpleCounter, 4>),
   make_pair("weakly convex fixed 5d", redelemeier_main<WeaklyConvexLatticeAnimal, SimpleCounter, 5>),
 
-  //  make_pair("trivial redelemeier 3d (obsolete)", redelemeier_recursive_3d),
-  //  make_pair("trivial redelemeier weak convex 3d  (obsolete)", redelemeier_3d_line_convex),
-  // make_pair("trivial redelemeier strong convex 3d (obsolete)", redelemeier_3d_full_convex),
+
 
   make_pair("count total adjacent cells 2d", redelemeier_main<AdjCountLatticeAnimal, SimpleCounter, 2>),
   make_pair("count total adjacent cells 3d", redelemeier_main<AdjCountLatticeAnimal, SimpleCounter, 3>),
@@ -67,11 +65,7 @@ vector< pair< string, CountingAlgorithm > > ALGORITHMS = {
   make_pair("count histo adjacent cells 2d", redelemeier_main<AdjCountLatticeAnimal, HistogramCounter, 2>),
   make_pair("count hosto adjacent cells 3d", redelemeier_main<AdjCountLatticeAnimal, HistogramCounter, 3>),
 
-  //make_pair("strongly convex fixed 2d", redelemeier_main<StronglyConvexLatticeAnimal, SimpleCounter, 2>),
-  //make_pair("strongly convex fixed 3d", redelemeier_main<StronglyConvexLatticeAnimal, SimpleCounter, 3>),
-  
-  //make_pair("redelemeier with pruning weak convex 3d (obsolete)", redelemeier_with_pruning::line_convex_counter_3d),
-  //make_pair("redelemeier with pruning strong convex 3d (obsolete)", redelemeier_with_pruning::full_convex_counter_3d)
+
 
   make_pair("strongly convex fixed 2d", redelemeier_main<StronglyConvexLatticeAnimal, SimpleCounter, 2>),
   make_pair("strongly convex fixed 3d", redelemeier_main<StronglyConvexLatticeAnimal, SimpleCounter, 3>),
@@ -80,7 +74,22 @@ vector< pair< string, CountingAlgorithm > > ALGORITHMS = {
 
   make_pair("weakly convex fixed 2d simple algorithm using filter", redelemeier_main<WeaklyConvexFilteredLatticeAnimal, SimpleCounter, 2>),
   make_pair("weakly convex fixed 3d simple algorithm using filter", redelemeier_main<WeaklyConvexFilteredLatticeAnimal, SimpleCounter, 3>),
-  make_pair("weakly convex fixed 4d simple algorithm using filter", redelemeier_main<WeaklyConvexFilteredLatticeAnimal, SimpleCounter, 4>)
+  make_pair("weakly convex fixed 4d simple algorithm using filter", redelemeier_main<WeaklyConvexFilteredLatticeAnimal, SimpleCounter, 4>),
+
+
+
+  //  make_pair("trivial redelemeier 3d (obsolete)", redelemeier_recursive_3d),
+    make_pair("trivial redelemeier weak convex 3d  (obsolete)", redelemeier_3d_line_convex)
+  // make_pair("trivial redelemeier strong convex 3d (obsolete)", redelemeier_3d_full_convex),
+
+
+
+  //make_pair("strongly convex fixed 2d", redelemeier_main<StronglyConvexLatticeAnimal, SimpleCounter, 2>),
+  //make_pair("strongly convex fixed 3d", redelemeier_main<StronglyConvexLatticeAnimal, SimpleCounter, 3>),
+  
+  //make_pair("redelemeier with pruning weak convex 3d (obsolete)", redelemeier_with_pruning::line_convex_counter_3d),
+  //make_pair("redelemeier with pruning strong convex 3d (obsolete)", redelemeier_with_pruning::full_convex_counter_3d)
+
 };
 
 

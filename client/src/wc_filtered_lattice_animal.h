@@ -7,11 +7,12 @@
 #include <math.h>
 #include <assert.h>
 #include <fstream>
+#include <signal.h>
 
 #include "lattice_animal.h"
 
 
-#define ___MAX_N 64              // TODO:These constant are temoporary hack because I did not want to invest debugging time in a dynamically allocated solution.
+#define ___MAX_N 32              // TODO:These constant are temoporary hack because I did not want to invest debugging time in a dynamically allocated solution.
 #define ___OFFSET ___MAX_N / 2   //       n is a paraemter to this class, so there is no reason why I can't use it to create arrays of 2*n-1 size.
 
 /**
@@ -77,7 +78,34 @@ public:
    * {@inheritDoc} 
    */
   bool is_in_class(void) {
+/*
+//#ifdef DEBUG
+    for(index_t idx = 0; idx < _lattice.size(); idx++) {
+      for(std::vector< std::pair< column_t, coord_t > >::iterator iter = _index_to_cols[idx].begin(); 
+        iter != _index_to_cols[idx].end(); 
+	iter++) {  
 
+          bool ended = false;
+          bool prev = false;
+	  for ( int i = 0; i < ___MAX_N; i++ ) {
+         
+            if (_columns[(*iter).first].column_data[i]) {
+              if (ended) {
+                return false;
+              }   
+           } else if  (prev == true) {
+             ended = true;
+           }
+            
+            prev = _columns[(*iter).first].column_data[i];
+
+          }
+      }
+    } 
+// #endif
+if (true != (_num_of_segments == _num_of_active_cols)) {
+   raise(SIGSEGV);
+}*/
     return _num_of_segments == _num_of_active_cols;
   }
 
@@ -93,6 +121,7 @@ public:
 	iter++) {   
 
       assert(_columns[(*iter).first].column_data[(*iter).second + ___OFFSET] == true);
+      assert(_columns[(*iter).first].num_of_occupied > 0);
       
       if (_columns[(*iter).first].num_of_occupied == 1) { 
 
@@ -104,9 +133,8 @@ public:
 
         _num_of_segments -= 1;
 
-      } else if ( (*iter).second != 0 && 
-                  _columns[(*iter).first].column_data[(*iter).second - 1 + ___OFFSET] == true && 
-                  _columns[(*iter).first].column_data[(*iter).second + 1 + ___OFFSET] == true) {
+      } else if (_columns[(*iter).first].column_data[(*iter).second - 1 + ___OFFSET] == true && 
+                 _columns[(*iter).first].column_data[(*iter).second + 1 + ___OFFSET] == true) {
 
         _num_of_segments += 1;
 
@@ -133,7 +161,7 @@ public:
     
     // Call parent's add
     LatticeAnimal::add(idx);
-    
+
     for(std::vector< std::pair< column_t, coord_t > >::iterator iter = _index_to_cols[idx].begin(); 
 	iter != _index_to_cols[idx].end(); 
 	iter++) {   
@@ -150,9 +178,8 @@ public:
 
         _num_of_segments += 1;
 
-      } else if ( (*iter).second != 0 && 
-                  _columns[(*iter).first].column_data[(*iter).second - 1 + ___OFFSET] == true && 
-                  _columns[(*iter).first].column_data[(*iter).second + 1 + ___OFFSET] == true) {
+      } else if (_columns[(*iter).first].column_data[(*iter).second - 1 + ___OFFSET] == true && 
+                 _columns[(*iter).first].column_data[(*iter).second + 1 + ___OFFSET] == true) {
 
         _num_of_segments -= 1;
 

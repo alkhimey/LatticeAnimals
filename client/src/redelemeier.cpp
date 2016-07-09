@@ -54,7 +54,7 @@ void runRedelemeier(unsigned int n,
 		    count_t lowId,
 		    count_t hightId,
 		    Predicate pred,
-		    vector<count_t>* mycount, 
+		    std::map< std::string, count_t >* mycount, 
 		    std::ofstream* dump_file);
 
 
@@ -67,7 +67,7 @@ void recursiveCount(CellStack& p,
 		    count_t low_id,
 		    count_t hight_id,
 		    Predicate pred,
-		    vector<count_t>* mycount, 
+		    std::map< std::string, count_t >* mycount, 
 		    std::ofstream* dump_file);
 
 void recursiveCountV2(CellStack& p,
@@ -78,7 +78,7 @@ void recursiveCountV2(CellStack& p,
 		      count_t low_id,
 		      count_t hight_id,
 		      Predicate pred,
-		      vector<count_t>* mycount, 
+		      std::map< std::string, count_t >* mycount, 
 		      std::ofstream* dump_file);
 
 void iterativeCount(CellStack& p,
@@ -89,7 +89,7 @@ void iterativeCount(CellStack& p,
 		    count_t low_id,
 		    count_t hight_id,
 		    Predicate pred,
-		    vector<count_t>* mycount, 
+		    std::map< std::string, count_t >* mycount, 
 		    std::ofstream* dump_file);
 
 
@@ -185,7 +185,7 @@ bool isNewUntried(Cell c, CellStack& p) {
 	return true;
 }
 
-void runRedelemeier(unsigned int n, unsigned int n0, count_t lowId, count_t hightId, Predicate pred, vector<count_t>* mycount, std::ofstream* dump_file) {
+void runRedelemeier(unsigned int n, unsigned int n0, count_t lowId, count_t hightId, Predicate pred, std::map< std::string, count_t >* mycount, std::ofstream* dump_file) {
 	CellStack p;
 	CellSet untried;
 	untried.insert(Cell(0,0,0));
@@ -197,7 +197,7 @@ void runRedelemeier(unsigned int n, unsigned int n0, count_t lowId, count_t high
 
 void recursiveCount(CellStack& p, CellSet untried, unsigned int n,
 					unsigned int n0, count_t &curr_id, count_t low_id, count_t hight_id,
-		    Predicate pred, vector<count_t>* mycount, std::ofstream* dump_file) 
+		    Predicate pred, std::map< std::string, count_t >* mycount, std::ofstream* dump_file) 
 {	
    	while(!untried.empty()) {
 	
@@ -209,7 +209,7 @@ void recursiveCount(CellStack& p, CellSet untried, unsigned int n,
 
 		// Count only polyominoes that match the predicate and are in the search range //
 		if(pred(p) && p.size() >= n0 && curr_id >= low_id && curr_id < hight_id) {
-			(*mycount)[p.size()]++;
+			(*mycount)[std::to_string(p.size())]++;
 			dump_cell_stack(p, dump_file);
 		}
 
@@ -233,7 +233,7 @@ void recursiveCount(CellStack& p, CellSet untried, unsigned int n,
 
 void recursiveCountV2(CellStack& p, CellSet untried, unsigned int n,
 					unsigned int n0, count_t &curr_id, count_t low_id, count_t hight_id,
-		      Predicate pred, vector<count_t>* mycount, std::ofstream* dump_file) 
+		      Predicate pred, std::map< std::string, count_t >* mycount, std::ofstream* dump_file) 
 {	
    	while(!untried.empty()) {
 	
@@ -245,7 +245,7 @@ void recursiveCountV2(CellStack& p, CellSet untried, unsigned int n,
 
 		// Count only polyominoes that match the predicate and are in the search range //
 		if(pred(p) && p.size() >= n0 && curr_id >= low_id && curr_id < hight_id) {
-			(*mycount)[p.size()]++;
+			(*mycount)[std::to_string(p.size())]++;
 			dump_cell_stack(p, dump_file);
 		}
 
@@ -497,7 +497,7 @@ void redelemeier_recursive_3d( coord_t n,
 			       coord_t n0,
 			      count_t lowId,
 			      count_t hightId,
-			      vector<count_t>* results,
+			      std::map< std::string, count_t >* results,
 			      std::ofstream* dump_file) {
   
 
@@ -511,7 +511,7 @@ void redelemeier_3d_line_convex( coord_t n,
 				 coord_t n0,
 				count_t lowId,
 				count_t hightId,
-				vector<count_t>* results, 
+				std::map< std::string, count_t >* results, 
 				std::ofstream* dump_file) {
   runRedelemeier(n, n0, lowId, hightId, predConvex1_3d, results, dump_file);
 
@@ -522,7 +522,7 @@ void redelemeier_3d_full_convex( coord_t n,
 				 coord_t n0,
 				count_t lowId,
 				count_t hightId,
-				vector<count_t>* results,
+				std::map< std::string, count_t >* results,
 				std::ofstream* dump_file) {
   runRedelemeier(n, n0, lowId, hightId, predConvex2_3d, results, dump_file);
 

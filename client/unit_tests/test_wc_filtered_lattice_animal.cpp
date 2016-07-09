@@ -29,8 +29,76 @@ public:
     return _index_to_cols;
   }
 
+  coord_t get_num_of_segments() {
+    return _num_of_segments;
+  }
+
+  coord_t get_num_of_active_cols() {
+    return _num_of_active_cols;
+  }
+
 };
 
+
+
+
+TEST_CASE( "locating a bug in weakly convex filtered", "[weakly convex lattice animal][bug]") {
+  WcFilteredLatticeAnimalBreakout a = WcFilteredLatticeAnimalBreakout(3, 9);
+
+
+  CHECK  (a.get_num_of_active_cols() == 0);
+  REQUIRE(a.get_num_of_segments()    == 0);
+
+  a.add(2456);
+
+  CHECK  (a.get_num_of_active_cols() == 3);
+  REQUIRE(a.get_num_of_segments()    == 3);
+
+  a.add(2457);
+
+  CHECK  (a.get_num_of_active_cols() == 5);
+  REQUIRE(a.get_num_of_segments()    == 5);
+
+  a.add(2440);
+
+  CHECK  (a.get_num_of_active_cols() == 7);
+  REQUIRE(a.get_num_of_segments()    == 7);
+
+  a.add(2474);
+
+  CHECK  (a.get_num_of_active_cols() == 9);
+  REQUIRE(a.get_num_of_segments()    == 9);
+
+  a.add(2441);
+
+  CHECK  (a.get_num_of_active_cols() == 11);
+  REQUIRE(a.get_num_of_segments()    == 11);
+
+  a.add(2185);
+
+  CHECK  (a.get_num_of_active_cols() == 13);
+  REQUIRE(a.get_num_of_segments()    == 13);
+
+  a.add(2152);
+
+ CHECK  (a.get_num_of_active_cols() == 15);
+ REQUIRE(a.get_num_of_segments()    == 15);
+
+  a.add(2186);
+
+  CHECK(a.get_num_of_active_cols() == 16);
+  CHECK(a.get_num_of_segments()    == 17);
+
+  REQUIRE(!a.is_in_class());
+
+  a.add(2169);
+
+  CHECK(a.get_num_of_active_cols() == 18);
+  CHECK(a.get_num_of_segments()    == 18);
+
+  REQUIRE(a.is_in_class());
+
+}
 
 TEST_CASE( "weakly convex filtered constructor", "[weakly convex lattice animal][constructor]") {
   //TODO
@@ -38,7 +106,7 @@ TEST_CASE( "weakly convex filtered constructor", "[weakly convex lattice animal]
   std::vector< std::pair< column_t, coord_t > > cols;
 
    SECTION("d=2, n=1") {
-     WcLatticeAnimalBreakout wca = WcLatticeAnimalBreakout(2, 1);
+     WcLatticeAnimalBreakout wca = ((2, 1);
      
      cols = wca.get_index_to_cols()[0];
 
