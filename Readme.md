@@ -132,9 +132,9 @@ For using your own function, you can look at `redelemeier_3d_line_convex` from t
 
 The reason that there are several implementations is because this work was done iteratively. In each iteration, a newer implementaion was introduced, but the older implementations were retained for cross referencing the results.
 
-If you want to use the already exisitng modular infrastructure look at the generic function `redelemeier_main`:
+If you want to use the already exisitng, modular infrastructure look at the generic function `redelemeier_main`:
 
-```
+```C++
 template <class A, class C, dim_t D>
 void redelemeier_main (coord_t n,
 		       coord_t n0,
@@ -150,9 +150,17 @@ In brief, the generic parameters are:
 * __C__ - A class which represents the entity which counts and aggregates the results.
 * __D__ - The dimention at which the counter needs to operate.
 
+### Countings different classes of lattice animals
 
+TBD
 
+### Counting using a different counting method
 
+If you simply want to count the total perimeter of all lattice animal of size n, then it is enough to provide a custom implementation of class A (change only the `get_count()` method). But is you want to count the number of lattice animals for _each_ primiter, you will also have to use non-standard class C implementation.
+
+Look at `SimpleCounter` from `simple_counter.h` for an example. It is also advisable to derive from it and simply override the fucntions. More advanced example is the `HistogramCounter` which can be used exactly for the porpose that was described above.
+
+Notice that the `increment` method is called for every counted ojectI It must be as efficient as possible.
 
 ## The server
 
@@ -171,7 +179,7 @@ TBD
 
 ### Adding a configuration
 
-
+TBD
 
 ### Info page
 
