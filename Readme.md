@@ -5,9 +5,9 @@ Provided are several implementations ,which are based on Redelemeier's algorithm
 
 ![Free pentominoes](https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/All_18_Pentominoes.svg/440px-All_18_Pentominoes.svg.png)
 
-It is possible to extend the system to count additional classes of lattice animals without.
+It is possible to extend the system to count additional classes of lattice animals.
 
-Additional, a slightly modified version of Redelemeier is introduced. This version enumerates some classes of lattice animals by pruning some search trees instead of enumerating all the possible lattice animals and filtering those which are not inside the class. 
+Additionaly, a slightly modified version of Redelemeier is introduced. This version enumerates some classes of lattice animals by pruning some search trees instead of enumerating all the possible lattice animals and filtering those which are not inside the class. 
 
 This is a two part system:
 
