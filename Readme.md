@@ -1,4 +1,5 @@
-This software package is a tool which allows running distributed algorithms for counting lattice animals. 
+
+This software package is a tool which allows running distributed algorithms for counting [lattice animals](https://en.wikipedia.org/wiki/Polyomino). 
 
 Provided  are several implementations that enumerate various classes of lattice animals as well as aggregating the results in various ways is possible.
 
@@ -10,6 +11,25 @@ This is a two part system:
 
 2. Sever - The server manages the counting effort. It allocates jobs and returns then to clients on requests, it also recieves the results and stores them in a database.
 
+## Table of contents
+1. [The client](#the-client)
+    1. [Building](#building)
+    2. [Windows](#windows)
+    3. [Running](#running)
+    4. [How to add a new algorithm](#how-to-add-a-new-algorithm)
+    5. [Countings different classes of lattice animals](#countings-different-classes-of-lattice-animals)
+    6. [Counting using a different counting method](#counting-using-a-different-counting-method)
+2. [The server](#the-server)
+    1. [Prerequirments for running localy](#prerequirments-for-running-localy)
+    2. [Running localy](#running-localy)
+    3. [Adding a configuration](#adding-a-configuration)
+    4. [Info page](#info-page)
+    5. [Deploying](#deploying)
+3. [Protocol](#protocol)
+    1. [Versioning](#versioning)
+    2. [Allocating and obtaining new job](#allocating-and-obtaining-new-job)
+    3. [Reporting the results of job execution](#reporting-the-results-of-job-execution)
+4. [Extra](#extra)
 
 ## The client
 
