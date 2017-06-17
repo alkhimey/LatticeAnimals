@@ -11,7 +11,6 @@ This is a two part system:
 2. Sever - The server manages the counting effort. It allocates jobs and returns then to clients on requests, it also recieves the results and stores them in a database.
 
 
-
 ## The client
 
 
@@ -32,7 +31,7 @@ client/bin/run_linux_release
 client/bin/unit_tests_linux_release
 ```
 
-#### Windows
+### Windows
 
 As was mentioned, to build for windows, MinGW cross compiler needs to be installed. 
 
@@ -146,21 +145,30 @@ void redelemeier_main (coord_t n,
 
 In brief, the generic parameters are:
 
-* __A__ - A class which represents the model of the lattice.
+* __A__ - A class which represents the model of the lattice anmall.
 * __C__ - A class which represents the entity which counts and aggregates the results.
 * __D__ - The dimention at which the counter needs to operate.
 
 ### Countings different classes of lattice animals
 
-TBD
+Suppose you want to count lattice animalls with prime perimiters.
+
+A starting point would be the `LatticeAnimal` class. In most scenarios, it is possible to derive from this class and override only some of it's functions.
+
+
 
 ### Counting using a different counting method
 
-If you simply want to count the total perimeter of all lattice animal of size n, then it is enough to provide a custom implementation of class A (change only the `get_count()` method). But is you want to count the number of lattice animals for _each_ primiter, you will also have to use non-standard class C implementation.
+If all that you want is to count the total perimeter of all lattice animal of size n, then it is enough to provide a custom implementation of class A (change to the `get_count()` method). But is you want to count the number of lattice animals for _each_ primiter, you will also have to use non default class C implementation.
 
-Look at `SimpleCounter` from `simple_counter.h` for an example. It is also advisable to derive from it and simply override the fucntions. More advanced example is the `HistogramCounter` which can be used exactly for the porpose that was described above.
+The default implementation is `SimpleCounter` from `simple_counter.h`, you can use it as an example. It is advisable to derive from it and override the fucntions. More advanced example is the `HistogramCounter` which can be used exactly for the porpose that was described above.
 
-Notice that the `increment` method is called for every counted ojectI It must be as efficient as possible.
+Notice that the `increment` method is called for every counted oject. Therfore it must be as efficient as possible.
+
+### Why D is a generic parameter?
+
+
+
 
 ## The server
 
@@ -273,6 +281,7 @@ Lattice animal classes can have the following characteristics:
 4. Lattice - for example polyiamond (triangle lattice) or polyhex (hexagonal lattice).
 5. Neighbor confections - for example polyknights
 
+Here is an article with some ideas: [Some problems in counting of lattice animals, polyominoes, polygons and walks / Andrew Daniel Rechnitzer](http://www.math.yorku.ca/~andrew/documents/thesis.pdf)
 
 ## Unit tests
 
