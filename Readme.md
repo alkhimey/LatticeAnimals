@@ -218,16 +218,41 @@ The server is powered by Django framework and it uses MySQL as a database.
 
 ### Requirements for running locally
 
-TBD
+The framework used for the server is Django 1.9.4 running with Python 2.7. It might work with newer versions of Django, but for older versions the chances are low.
+
+To allow connections with MySQL server I installed the following:
+
+```
+pip install django-ipware
+sudo apt-get install libmysqlclient-dev
+sudo pip install MySQL-python
+pip install mysqlclient
+```
+
+I did not install local instance of MySQL server. I opened a tet db using the same cloud provider that I used to host the production db and application. I use (www.pythonanywhere.com)[www.pythonanywhere.com], but any cloud provider that have MySQL and Django is suitable. 
 
 ### Running locally
 
-TBD
+There is no subsitute for learning how Django works. I suggest trying the official tutorial.
+
+Here is a quick list of commands that I found usefull. This list can be used as a cheat sheet.
+
+* `ssh -L 3306:clown.mysql.pythonanywhere-services.com:3306 clown@ssh.pythonanywhere.com`
+
+* `python manage.py makemigrations counting_app`
+
+* `python manage.py migrate`
+
+* `python manage.py createsuperuser`
+
+* `python manage.py collectstatic`
 
 
 ### Adding a configuration
 
-TBD
+Browse to the `/admin` page.
+
+
 
 ### Info page
 
@@ -298,17 +323,17 @@ After completing the computation, the client is required to send a GET request t
 
 Life is short and waiting for results is a useless waste of it, so here are some tips that can speed the counting a bit. Some of these are already in the code.
 
-- [V] Use good compiler flags. 
+[x] Use good compiler flags. 
 
-- [V] Precalculate anything you can (for example neighbor of each cell are calculated in `LatticeAnimal` constructor)
+[x] Precalculate anything you can (for example neighbor of each cell are calculated in `LatticeAnimal` constructor)
 
-- [ ] Determine the best `n0` depending on the number of available clients.
+[ ] Determine the best `n0` depending on the number of available clients.
 
-- [ ] Redelemeier algorithm can be implemented without recursion!
+[ ] Redelemeier algorithm can be implemented without recursion!
 
-- [V] Use iterative approach to determine whether a lattice animal is inside a class (not implemented for strongly convex yet)
+[x] Use iterative approach to determine whether a lattice animal is inside a class (not implemented for strongly convex yet)
 
-- [V] Make sure values are passed by reference and there is no implicit copy constructor invocation in the recursive call of the Redelemeier implementation. 
+[x] Make sure values are passed by reference and there is no implicit copy constructor invocation in the recursive call of the Redelemeier implementation. 
 
 ### Lattice animal classes
 
