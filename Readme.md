@@ -1,19 +1,22 @@
 
 This is a source code of a tool which allows running distributed algorithms for counting [lattice animals](https://en.wikipedia.org/wiki/Polyomino). 
 
-Provided are several implementations ,which are based on Redelemeier's algorithm, that enumerate various classes of lattice animals as and aggregating the results in various ways.
+Provided with the tool, are several implementations, which are based on Redelemeier's algorithm, that enumerate various classes of lattice animals and aggregating the results in defferent ways.
 
 ![Free pentominoes](https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/All_18_Pentominoes.svg/440px-All_18_Pentominoes.svg.png)
 
-It is possible to extend the system to count additional classes of lattice animals without.
 
-Additional, a slightly modified version of Redelemeier is introduced. This version enumerates some classes of lattice animals by pruning some search trees instead of enumerating all the possible lattice animals and filtering those which are not inside the class. 
-
-This is a two part system:
+This system has two major parts:
 
 1. Client - Each client can run in either a stand-alone mode, in which it executes a specific algorithm with a set of parameters. Or it can run as part of a distributed counting effort where it receives the jobs from a server.
 
 2. Sever - The server manages the counting effort. It allocates jobs and returns then to clients on requests, it also receives the results and stores them in a database.
+
+
+It is possible to extend the system to count additional classes of lattice animals without a lot of additional work.
+
+Additional, a slightly modified version of Redelemeier is introduced. This version enumerates some classes of lattice animals by pruning some search trees instead of enumerating all the possible lattice animals and filtering those which are not inside the class. 
+
 
 ## Table of contents
 1. [The client](#the-client)
@@ -153,11 +156,11 @@ typedef void (*CountingAlgorithm) (coord_t n,
 
 Now, you have two options. You can either provide your own implementation ( a function with the above signature ), or instantiate the generic function `redelemeier_main` found in the same file.
 
-For using your own function, you can look at `redelemeier_3d_line_convex` from the file ``.
+For using your own function, you can look at `redelemeier_3d_line_convex` from the file `redelemeier.cpp`.
 
 The reason that there are several implementations is because this work was done iteratively. In each iteration, a newer implementation was introduced, but the older implementations were retained for cross referencing the results.
 
-If you want to use the already existing, modular infrastructure look at the generic function `redelemeier_main`:
+If you want to use the already existing, modular infrastructure (this is the preferred way for newer implementations) look at the generic function `redelemeier_main`:
 
 ```C++
 template <class A, class C, dim_t D>
@@ -179,17 +182,17 @@ In brief, the generic parameters are:
 
 Suppose you want to count convex lattice animals.
 
-A starting point would to look at the `LatticeAnimal` class. In most scenarios, it is possible to derive from this class and override only some of it's methods.
+A starting point would be to look at the `LatticeAnimal` class. In most scenarios, it is possible to derive from this class and override only some of it's methods.
 
-In this particular example, a trivial implementation would override `is_in_class` with a method that tests the lattice animal for it's convexity.
+In this particular example, a trivial implementation would override `is_in_class` with a method that tests if the lattice animal is convex or not.
 
-Checking convexity is a heavy operation, and it will run for each lattice animal found by the Redelemeier algorithm. A more sophisticated approach would be to override `add` and `remove` methods as well. It is much faster to check for convexity if the convexity of the original lattice animal is know along with the operation (addition or removal of a cell).
+Checking convexity is a heavy operation, and it will run for each lattice animal found by the Redelemeier algorithm (which is exponentialy large number). A more sophisticated approach would be to override `add` and `remove` methods as well. Each time a new lattice animal is constructed by adding or removing a cell, it's convexity can be calculated much fasted if the convexity of the lattice animal it is basen on. So the idea here is to keep track of convexity and perform a relatively lightweight operation each time a new lattice animal is constructed.
 
-This example can be found in the `wc_lattice_animal.h` file 
+This example can be found in the `wc_lattice_animal.h` file (wc stands for weakly convex).
 
 ### Counting using a different counting method
 
-If all that you want is to count the total perimeter of all lattice animal of size n, then it is enough to provide a custom implementation of class A (change to the `get_count()` method). But is you want to count the number of lattice animals for _each_ perimeter, you will also have to use non default class C implementation.
+If all that you want is to count the total perimeter of all lattice animal of size n, then it is enough to provide a custom implementation of class A (change to the `get_count()` method). But if you want to count the number of lattice animals for _each_ perimeter, you will also have to use non default class C implementation.
 
 The default implementation is `SimpleCounter` from `simple_counter.h`, you can use it as an example. It is advisable to derive from it and override the functions. More advanced example is the `HistogramCounter` which can be used exactly for the propose that was described above.
 
@@ -245,7 +248,7 @@ TBD
 ## Protocol
 
 The communication between the server and the client is based on HTTP. 
-The servers runs an HTTP server and the client is the on who initiates the communication.
+The servers runs an HTTP server and the client is the one responisble to initiates the communication.
 
 ### Version
 
@@ -255,7 +258,7 @@ Client's version can be changed by editing the line in `main.cpp`.
 #define CLIENT_VERSION "2.4"
 ```
 
-Client's version must match the version specified in the server's active Config.
+Client's version must match the version specified in the server's active `Config`.
 
 
 ### Allocating and obtaining new job

@@ -10,3 +10,7 @@ counting_site/db.sqlite3
 
 
 doxygen/
+
+counting_site/logs/
+
+logs/
